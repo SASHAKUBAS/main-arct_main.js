@@ -5267,13 +5267,14 @@ if (window.arctAllies && !_0x73cd4e.Hidden.active && typeof gameWorld !== "undef
                 'label': "Mode",
                 'object': _0x73cd4e.AutoBuild,
                 'property': "mode",
-                'options': ['Bridges', 'Roofs', "Plots"],
+                'options': ['Bridges', 'Roofs', 'Plots', 'Stone Bridges', 'Stone Roofs', 'Windows', 'Stone Windows'],
                 'onChange': _0x177cd0 => {
                   _0xa896c1.saveSettings();
                 }
               }]
             }, {
               'type': "subfolder",
+
               'label': "Spectator Settings",
               'subfolder': [{
                 'type': 'checkbox',
@@ -7222,6 +7223,11 @@ function _0x470946() {
               _0x36d526 = Math.floor((_0x836028.angle + _0x37bdca) % _0x37bdca * 255 / _0x37bdca);
             _0x53166f.websocket.send(JSON.stringify([_0x4e5e95.build, _0x44c140.BRIDGE, _0x36d526, 0]));
           }
+          if (_0x73cd4e.AutoBuild.mode == "Stone Bridges" && _0x3b2ae4.WUU.WUV[_0x44c140.STONE_BRIDGE]) {
+            let _0x37bdca = Math.PI * 2,
+              _0x36d526 = Math.floor((_0x836028.angle + _0x37bdca) % _0x37bdca * 255 / _0x37bdca);
+            _0x53166f.websocket.send(JSON.stringify([_0x4e5e95.build, _0x44c140.STONE_BRIDGE, _0x36d526, 0]));
+          }
           if (_0x73cd4e.AutoBuild.mode == "Plots" && _0x3b2ae4.WUU.WUV[_0x44c140.PLOT]) {
             let _0x411ade = Math.PI * 2,
               _0x5c6063 = Math.floor((_0x836028.angle + _0x411ade) % _0x411ade * 255 / _0x411ade);
@@ -7231,6 +7237,21 @@ function _0x470946() {
             let _0x1e9874 = Math.PI * 2,
               _0x42bc19 = Math.floor((_0x836028.angle + _0x1e9874) % _0x1e9874 * 255 / _0x1e9874);
             _0x53166f.websocket.send(JSON.stringify([_0x4e5e95.build, _0x44c140.ROOF, _0x42bc19, 0]));
+          }
+          if (_0x73cd4e.AutoBuild.mode == "Stone Roofs" && _0x3b2ae4.WUU.WUV[_0x44c140.STONE_ROOF]) {
+            let _0x1e9874 = Math.PI * 2,
+              _0x42bc19 = Math.floor((_0x836028.angle + _0x1e9874) % _0x1e9874 * 255 / _0x1e9874);
+            _0x53166f.websocket.send(JSON.stringify([_0x4e5e95.build, _0x44c140.STONE_ROOF, _0x42bc19, 0]));
+          }
+          if (_0x73cd4e.AutoBuild.mode == "Windows" && _0x3b2ae4.WUU.WUV[_0x44c140.WOODEN_WINDOW]) {
+            let _0x1e9874 = Math.PI * 2,
+              _0x42bc19 = Math.floor((_0x836028.angle + _0x1e9874) % _0x1e9874 * 255 / _0x1e9874);
+            _0x53166f.websocket.send(JSON.stringify([_0x4e5e95.build, _0x44c140.WOODEN_WINDOW, _0x42bc19, 0]));
+          }
+          if (_0x73cd4e.AutoBuild.mode == "Stone Windows" && _0x3b2ae4.WUU.WUV[_0x44c140.STONE_WINDOW]) {
+            let _0x1e9874 = Math.PI * 2,
+              _0x42bc19 = Math.floor((_0x836028.angle + _0x1e9874) % _0x1e9874 * 255 / _0x1e9874);
+            _0x53166f.websocket.send(JSON.stringify([_0x4e5e95.build, _0x44c140.STONE_WINDOW, _0x42bc19, 0]));
           }
         }
       }
