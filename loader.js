@@ -5446,7 +5446,7 @@ if (window.arctAllies && !_0x73cd4e.Hidden.active && typeof gameWorld !== "undef
                 _0xa896c1.saveSettings();
               }
             }],
-            'Farming': [{
+'Farming': [{
               'type': "subfolder",
               'label': "Auto Farm Settings",
               'subfolder': [{
@@ -5467,7 +5467,7 @@ if (window.arctAllies && !_0x73cd4e.Hidden.active && typeof gameWorld !== "undef
                 }
               }, {
                 'type': 'text',
-                'label': 'Whitelist IDs',
+                'label': 'Allowed Players (IDs)',
                 'object': _0x73cd4e.AutoFarm,
                 'property': 'whitelist',
                 'onChange': val => {
@@ -5494,34 +5494,43 @@ if (window.arctAllies && !_0x73cd4e.Hidden.active && typeof gameWorld !== "undef
                   let _0x102fde = gameWorld.fast_units[_0x57f7e4.uid];
                   _0x102fde && (_0x73cd4e.AutoFarm.SX = _0x102fde.x, _0x73cd4e.AutoFarm.SY = _0x102fde.y), _0xa896c1.saveSettings();
                 }
-              }, {
-                'type': 'button',
-                'label': 'drop b (Berries)'
-              }, {
-                'type': 'button',
-                'label': 'drop w (Wheat)'
-              }, {
-                'type': 'button',
-                'label': 'drop p (Pumpkin)'
-              }, {
-                'type': 'button',
-                'label': 'drop c (Carrot)'
-              }, {
-                'type': 'button',
-                'label': 'drop to (Tomato)'
-              }, {
-                'type': 'button',
-                'label': 'drop th (Thornbush)'
-              }, {
-                'type': 'button',
-                'label': 'drop g (Garlic)'
-              }, {
-                'type': 'button',
-                'label': 'drop wm (Watermelon)'
-              }, {
-                'type': 'button',
-                'label': 'drop all'
               }]
+            }, {
+              'type': 'button',
+              'label': 'drop b (Berries)',
+              'action': () => {} // Нічого не робить, змінити не можна
+            }, {
+              'type': 'button',
+              'label': 'drop w (Wheat)',
+              'action': () => {}
+            }, {
+              'type': 'button',
+              'label': 'drop p (Pumpkin)',
+              'action': () => {}
+            }, {
+              'type': 'button',
+              'label': 'drop c (Carrot)',
+              'action': () => {}
+            }, {
+              'type': 'button',
+              'label': 'drop to (Tomato)',
+              'action': () => {}
+            }, {
+              'type': 'button',
+              'label': 'drop th (Thornbush)',
+              'action': () => {}
+            }, {
+              'type': 'button',
+              'label': 'drop g (Garlic)',
+              'action': () => {}
+            }, {
+              'type': 'button',
+              'label': 'drop wm (Watermelon)',
+              'action': () => {}
+            }, {
+              'type': 'button',
+              'label': 'drop all',
+              'action': () => {}
             }],
             'Binds': [{
               'type': "bind",
