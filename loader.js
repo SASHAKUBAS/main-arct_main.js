@@ -5640,115 +5640,85 @@ if (window.arctAllies && !_0x73cd4e.Hidden.active && typeof gameWorld !== "undef
               }
             }],
             'Shop': [
-    {
-      'type': 'range',
-      'label': 'Wood Amount',
-      'min': 1, 'max': 10000, 'step': 1,
-      'object': _0x73cd4e,
-      'property': 'market.wood'
-    }, {
-      'type': 'checkbox',
-      'label': 'Buy Wood',
-      'object': _0x73cd4e,
-      'property': 'buy_wood_trigger',
-      'onChange': val => { 
-          if(val) { 
-              window.arctSendBuyPacket(0, _0x73cd4e['market.wood'] || 100); 
-              _0x73cd4e.buy_wood_trigger = 0; 
-          } 
-      }
-    },
-    {
-      'type': 'range',
-      'label': 'Stone Amount',
-      'min': 1, 'max': 10000, 'step': 1,
-      'object': _0x73cd4e,
-      'property': 'market.stone'
-    }, {
-      'type': 'checkbox',
-      'label': 'Buy Stone',
-      'object': _0x73cd4e,
-      'property': 'buy_stone_trigger',
-      'onChange': val => { 
-          if(val) { 
-              window.arctSendBuyPacket(1, _0x73cd4e['market.stone'] || 100); 
-              _0x73cd4e.buy_stone_trigger = 0; 
-          } 
-      }
-    },
-    {
-      'type': 'range',
-      'label': 'Gold Amount',
-      'min': 1, 'max': 10000, 'step': 1,
-      'object': _0x73cd4e,
-      'property': 'market.gold'
-    }, {
-      'type': 'checkbox',
-      'label': 'Buy Gold',
-      'object': _0x73cd4e,
-      'property': 'buy_gold_trigger',
-      'onChange': val => { 
-          if(val) { 
-              window.arctSendBuyPacket(2, _0x73cd4e['market.gold'] || 100); 
-              _0x73cd4e.buy_gold_trigger = 0; 
-          } 
-      }
-    },
-    {
-      'type': 'range',
-      'label': 'Diamond Amount',
-      'min': 1, 'max': 10000, 'step': 1,
-      'object': _0x73cd4e,
-      'property': 'market.diamond'
-    }, {
-      'type': 'checkbox',
-      'label': 'Buy Diamond',
-      'object': _0x73cd4e,
-      'property': 'buy_diamond_trigger',
-      'onChange': val => { 
-          if(val) { 
-              window.arctSendBuyPacket(3, _0x73cd4e['market.diamond'] || 100); 
-              _0x73cd4e.buy_diamond_trigger = 0; 
-          } 
-      }
-    },
-    {
-      'type': 'range',
-      'label': 'Amethyst Amount',
-      'min': 1, 'max': 10000, 'step': 1,
-      'object': _0x73cd4e,
-      'property': 'market.amethyst'
-    }, {
-      'type': 'checkbox',
-      'label': 'Buy Amethyst',
-      'object': _0x73cd4e,
-      'property': 'buy_amethyst_trigger',
-      'onChange': val => { 
-          if(val) { 
-              window.arctSendBuyPacket(4, _0x73cd4e['market.amethyst'] || 100); 
-              _0x73cd4e.buy_amethyst_trigger = 0; 
-          } 
-      }
-    },
-    {
-      'type': 'range',
-      'label': 'Reidite Amount',
-      'min': 1, 'max': 10000, 'step': 1,
-      'object': _0x73cd4e,
-      'property': 'market.reidite'
-    }, {
-      'type': 'checkbox',
-      'label': 'Buy Reidite',
-      'object': _0x73cd4e,
-      'property': 'buy_reidite_trigger',
-      'onChange': val => { 
-          if(val) { 
-              window.arctSendBuyPacket(5, _0x73cd4e['market.reidite'] || 100); 
-              _0x73cd4e.buy_reidite_trigger = 0; 
-          } 
-      }
-    }
-],
+                {
+                    'type': 'range',
+                    'label': 'Wood Amount',
+                    'min': 1, 'max': 10000, 'step': 1,
+                    'object': _0x73cd4e,
+                    'property': 'market.wood'
+                }, {
+                    'type': 'button',
+                    'label': 'Buy Wood',
+                    'action': () => {
+                        window.arctSendBuyPacket(0, _0x73cd4e['market.wood'] || 100);
+                    }
+                },
+                {
+                    'type': 'range',
+                    'label': 'Stone Amount',
+                    'min': 1, 'max': 10000, 'step': 1,
+                    'object': _0x73cd4e,
+                    'property': 'market.stone'
+                }, {
+                    'type': 'button',
+                    'label': 'Buy Stone',
+                    'action': () => {
+                        window.arctSendBuyPacket(1, _0x73cd4e['market.stone'] || 100);
+                    }
+                },
+                {
+                    'type': 'range',
+                    'label': 'Gold Amount',
+                    'min': 1, 'max': 10000, 'step': 1,
+                    'object': _0x73cd4e,
+                    'property': 'market.gold'
+                }, {
+                    'type': 'button',
+                    'label': 'Buy Gold',
+                    'action': () => {
+                        window.arctSendBuyPacket(2, _0x73cd4e['market.gold'] || 100);
+                    }
+                },
+                {
+                    'type': 'range',
+                    'label': 'Diamond Amount',
+                    'min': 1, 'max': 10000, 'step': 1,
+                    'object': _0x73cd4e,
+                    'property': 'market.diamond'
+                }, {
+                    'type': 'button',
+                    'label': 'Buy Diamond',
+                    'action': () => {
+                        window.arctSendBuyPacket(3, _0x73cd4e['market.diamond'] || 100);
+                    }
+                },
+                {
+                    'type': 'range',
+                    'label': 'Amethyst Amount',
+                    'min': 1, 'max': 10000, 'step': 1,
+                    'object': _0x73cd4e,
+                    'property': 'market.amethyst'
+                }, {
+                    'type': 'button',
+                    'label': 'Buy Amethyst',
+                    'action': () => {
+                        window.arctSendBuyPacket(4, _0x73cd4e['market.amethyst'] || 100);
+                    }
+                },
+                {
+                    'type': 'range',
+                    'label': 'Reidite Amount',
+                    'min': 1, 'max': 10000, 'step': 1,
+                    'object': _0x73cd4e,
+                    'property': 'market.reidite'
+                }, {
+                    'type': 'button',
+                    'label': 'Buy Reidite',
+                    'action': () => {
+                        window.arctSendBuyPacket(5, _0x73cd4e['market.reidite'] || 100);
+                    }
+                }
+            ],
             'Skin\x20Changer': [{
               'type': 'subfolder',
               'label': 'Skin',
@@ -9774,43 +9744,36 @@ window.arctAllies = {};
 
     setTimeout(initRadar, 3000);
 })();
-// --- ARCT WEBSOCKET SHOP HANDLER (Фінальний виправлений) ---
+// --- ARCT WEBSOCKET SHOP HANDLER (Вставити в самий кінець коду) ---
 (function() {
     window.arctSendBuyPacket = async function(itemIndex, totalAmount) {
+        let sock = window.v2600;
+        if (!sock || !sock.websocket) {
+            for (let k in window) {
+                if (window[k] && typeof window[k] === 'object' && window[k].websocket && window[k].websocket.readyState === 1) {
+                    sock = window[k]; break;
+                }
+            }
+        }
+        
+        if (!sock || !sock.websocket || sock.websocket.readyState !== 1) return;
+
         if (totalAmount > 10000) totalAmount = 10000;
         if (totalAmount <= 0) return;
-
-        // Мапа індексів відповідає твоїй структурі меню: 0:wood, 1:stone, 2:gold, 3:diamond, 4:amethyst, 5:reidite
-        const resourceNames = ["wood", "stone", "gold", "diamond", "amethyst", "reidite"];
-        let resName = resourceNames[itemIndex];
-        
-        if (!resName) return;
-
-        if (typeof _0x73cd4e === 'undefined' || typeof _0x53166f === 'undefined') return;
 
         let remaining = totalAmount;
 
         while (remaining > 0) {
-            let batch = remaining > 80 ? 80 : remaining;
+            let batch = remaining > 83 ? 80 : remaining;
             
-            // Записуємо кількість у правильний об'єкт market відповідно до твого меню
-            if (!_0x73cd4e.market) _0x73cd4e.market = {};
-            _0x73cd4e.market[resName] = batch;
-
-            // Викликаємо рідний генератор пакетів гри
-            if (typeof _0x548135 === 'function' && typeof _0x53166f.WQN === 'function') {
-                try {
-                    let packetData = _0x548135(resName, _0x73cd4e.market);
-                    _0x53166f.WQN(packetData);
-                } catch (e) {
-                    console.error('[ARCT Shop] Помилка відправки пакету:', e);
-                }
-            }
+            // Відправляємо пакет через сокет [39, кількість, ID_предмета]
+            let packet = [39, batch, itemIndex];
+            WebSocket.prototype.send.call(sock.websocket, JSON.stringify(packet));
             
             remaining -= batch;
             
             if (remaining > 0) {
-                await new Promise(r => setTimeout(r, 120)); 
+                await new Promise(r => setTimeout(r, 100)); 
             }
         }
     };
