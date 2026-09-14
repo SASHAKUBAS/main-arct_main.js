@@ -9774,36 +9774,43 @@ window.arctAllies = {};
 
     setTimeout(initRadar, 3000);
 })();
-// --- ARCT WEBSOCKET SHOP HANDLER (Вставити в самий кінець коду) ---
+// --- ARCT WEBSOCKET SHOP HANDLER (Фінальний виправлений) ---
 (function() {
     window.arctSendBuyPacket = async function(itemIndex, totalAmount) {
-        let sock = window.v2600;
-        if (!sock || !sock.websocket) {
-            for (let k in window) {
-                if (window[k] && typeof window[k] === 'object' && window[k].websocket && window[k].websocket.readyState === 1) {
-                    sock = window[k]; break;
-                }
-            }
-        }
-        
-        if (!sock || !sock.websocket || sock.websocket.readyState !== 1) return;
-
         if (totalAmount > 10000) totalAmount = 10000;
         if (totalAmount <= 0) return;
+
+        // Мапа індексів відповідає твоїй структурі меню: 0:wood, 1:stone, 2:gold, 3:diamond, 4:amethyst, 5:reidite
+        const resourceNames = ["wood", "stone", "gold", "diamond", "amethyst", "reidite"];
+        let resName = resourceNames[itemIndex];
+        
+        if (!resName) return;
+
+        if (typeof _0x73cd4e === 'undefined' || typeof _0x53166f === 'undefined') return;
 
         let remaining = totalAmount;
 
         while (remaining > 0) {
-            let batch = remaining > 83 ? 80 : remaining;
+            let batch = remaining > 80 ? 80 : remaining;
             
-            // Відправляємо пакет через сокет [39, кількість, ID_предмета]
-            let packet = [39, batch, itemIndex];
-            WebSocket.prototype.send.call(sock.websocket, JSON.stringify(packet));
+            // Записуємо кількість у правильний об'єкт market відповідно до твого меню
+            if (!_0x73cd4e.market) _0x73cd4e.market = {};
+            _0x73cd4e.market[resName] = batch;
+
+            // Викликаємо рідний генератор пакетів гри
+            if (typeof _0x548135 === 'function' && typeof _0x53166f.WQN === 'function') {
+                try {
+                    let packetData = _0x548135(resName, _0x73cd4e.market);
+                    _0x53166f.WQN(packetData);
+                } catch (e) {
+                    console.error('[ARCT Shop] Помилка відправки пакету:', e);
+                }
+            }
             
             remaining -= batch;
             
             if (remaining > 0) {
-                await new Promise(r => setTimeout(r, 100)); 
+                await new Promise(r => setTimeout(r, 120)); 
             }
         }
     };
