@@ -5466,6 +5466,14 @@ if (window.arctAllies && !_0x73cd4e.Hidden.active && typeof gameWorld !== "undef
                   _0xa896c1.saveSettings();
                 }
               }, {
+                'type': 'text',
+                'label': 'Whitelist IDs',
+                'object': _0x73cd4e.AutoFarm,
+                'property': 'whitelist',
+                'onChange': val => {
+                  _0xa896c1.saveSettings();
+                }
+              }, {
                 'type': 'button',
                 'label': 'Top\x20left\x20of\x20farm',
                 'action': _0x1d3881 => {
@@ -5486,6 +5494,33 @@ if (window.arctAllies && !_0x73cd4e.Hidden.active && typeof gameWorld !== "undef
                   let _0x102fde = gameWorld.fast_units[_0x57f7e4.uid];
                   _0x102fde && (_0x73cd4e.AutoFarm.SX = _0x102fde.x, _0x73cd4e.AutoFarm.SY = _0x102fde.y), _0xa896c1.saveSettings();
                 }
+              }, {
+                'type': 'button',
+                'label': 'drop b (Berries)'
+              }, {
+                'type': 'button',
+                'label': 'drop w (Wheat)'
+              }, {
+                'type': 'button',
+                'label': 'drop p (Pumpkin)'
+              }, {
+                'type': 'button',
+                'label': 'drop c (Carrot)'
+              }, {
+                'type': 'button',
+                'label': 'drop to (Tomato)'
+              }, {
+                'type': 'button',
+                'label': 'drop th (Thornbush)'
+              }, {
+                'type': 'button',
+                'label': 'drop g (Garlic)'
+              }, {
+                'type': 'button',
+                'label': 'drop wm (Watermelon)'
+              }, {
+                'type': 'button',
+                'label': 'drop all'
               }]
             }],
             'Binds': [{
