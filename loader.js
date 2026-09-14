@@ -88,7 +88,7 @@
 
             <div style="border-top: 1px solid rgba(255,255,255,0.12); margin-top: 10px; padding-top: 10px;">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <label for="arct-boxinfo" style="cursor: pointer; color: #00ffcc; font-weight: bold;">Box/Crate ESP</label>
+                    <label for="arct-boxinfo" style="cursor: pointer; color: #00ffcc; font-weight: bold;">BoxInfo</label>
                     <input type="checkbox" id="arct-boxinfo" style="cursor: pointer; width: 15px; height: 15px;" checked>
                 </div>
             </div>
