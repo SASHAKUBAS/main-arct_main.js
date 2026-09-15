@@ -1288,6 +1288,7 @@
         'Tracers': {
           'Krakens': 1,
           'Sandworms': 1,
+          'TreasureChests': 0,
           'BabyDragons': 0,
           'BabyLavaDragons': 0,
           'BabyMammoths': 0,
@@ -1329,7 +1330,10 @@
           'seedToPlace': 0,
           'bluecrown': 0
         },
-        
+        'Inventory': {
+          'myInv': false,
+          'teamInv': false
+        }
 };
       const _0x122c9c = {
         'darkMode': 0,
@@ -2402,6 +2406,7 @@
         WELL: 44,
         PUMPKIN_SEED: 46,
         ROOF: 47,
+        STONE_ROOF: 68,
         GARLIC_SEED: 48,
         THORNBUSH_SEED: 49,
         BED: 50,
@@ -3158,9 +3163,34 @@
           _0x275af2 = _0x5c3921.getContext('2d');
         return _0x5c3921.width = _0x250acc * 248, _0x5c3921.height = _0x250acc * 247, _0x275af2.save(), _0x275af2.translate(_0x250acc * 123.5, _0x250acc * 62.5), _0x275af2.rotate(6.28), _0x275af2.rect(_0x250acc * -84.5, _0x250acc * -25.5, _0x250acc * 169, _0x250acc * 169), _0x275af2.restore(), _0x993b50(_0x275af2, _0x4a027[2]), _0x5c3921;
       }
-      function _0x5d811b() {
-        _0x58c261.ROOF = [[], [], [], []], _0x58c261.ROOF[0][0] = _0x20af5d(_0x43be69(0.59, !![], ["#0d1b1c", "#44301b", "#57442a", "#523e26"])), _0x58c261.ROOF[0][1] = _0x20af5d(_0x43be69(0.59, !![], ["#0c0c0d", "#062124", "#10373d", '#0f3333'])), _0x58c261.ROOF[1][0] = _0x20af5d(_0x7d7250(0.59, !![], ["#0d1b1c", '#44301b', "#57442a", "#523e26"])), _0x58c261.ROOF[1][1] = _0x20af5d(_0x7d7250(0.59, !![], ["#0c0c0d", "#062124", "#10373d", "#0f3333"])), _0x58c261.ROOF[2][0] = _0x20af5d(_0x2ec28b(0.59, !![], ["#0d1b1c", "#44301b", "#57442a", "#523e26"])), _0x58c261.ROOF[2][1] = _0x20af5d(_0x2ec28b(0.59, !![], ["#0c0c0d", "#062124", "#10373d", '#0f3333'])), _0x58c261.ROOF[3][0] = _0x20af5d(_0x3df2a8(0.59, !![], ['#0d1b1c', "#57442a", "#57442a", "#523e26"])), _0x58c261.ROOF[3][1] = _0x20af5d(_0x3df2a8(0.59, !![], ["#0c0c0d", "#10373d", "#10373d", "#0f3333"]));
-      }
+     function _0x5d811b() {
+    // 1. ДЕРЕВ'ЯНІ ДАХИ (Оригінал - коричневі відтінки)
+    _0x58c261.ROOF = [[], [], [], []];
+    _0x58c261.ROOF[0][0] = _0x20af5d(_0x43be69(0.59, !![], ["#0d1b1c", "#44301b", "#57442a", "#523e26"]));
+    _0x58c261.ROOF[0][1] = _0x20af5d(_0x43be69(0.59, !![], ["#0c0c0d", "#062124", "#10373d", '#0f3333']));
+    _0x58c261.ROOF[1][0] = _0x20af5d(_0x7d7250(0.59, !![], ["#0d1b1c", '#44301b', "#57442a", "#523e26"]));
+    _0x58c261.ROOF[1][1] = _0x20af5d(_0x7d7250(0.59, !![], ["#0c0c0d", "#062124", "#10373d", "#0f3333"]));
+    _0x58c261.ROOF[2][0] = _0x20af5d(_0x2ec28b(0.59, !![], ["#0d1b1c", "#44301b", "#57442a", "#523e26"]));
+    _0x58c261.ROOF[2][1] = _0x20af5d(_0x2ec28b(0.59, !![], ["#0c0c0d", "#062124", "#10373d", '#0f3333']));
+    _0x58c261.ROOF[3][0] = _0x20af5d(_0x3df2a8(0.59, !![], ['#0d1b1c', "#57442a", "#57442a", "#523e26"]));
+    _0x58c261.ROOF[3][1] = _0x20af5d(_0x3df2a8(0.59, !![], ["#0c0c0d", "#10373d", "#10373d", "#0f3333"]));
+
+    // 2. КАМ'ЯНІ ДАХИ (Додано - сірі відтінки для дня і ночі)
+    _0x58c261.STONE_ROOF = [[], [], [], []];
+    
+    // Палітра кольорів [Тінь, Основа, Світлий блік, Темний блік]
+    let stoneDay = ["#222222", "#999999", "#aaaaaa", "#888888"]; 
+    let stoneNight = ["#111111", "#3c4d54", "#516770", "#485b63"];
+
+    _0x58c261.STONE_ROOF[0][0] = _0x20af5d(_0x43be69(0.59, !![], stoneDay));
+    _0x58c261.STONE_ROOF[0][1] = _0x20af5d(_0x43be69(0.59, !![], stoneNight));
+    _0x58c261.STONE_ROOF[1][0] = _0x20af5d(_0x7d7250(0.59, !![], stoneDay));
+    _0x58c261.STONE_ROOF[1][1] = _0x20af5d(_0x7d7250(0.59, !![], stoneNight));
+    _0x58c261.STONE_ROOF[2][0] = _0x20af5d(_0x2ec28b(0.59, !![], stoneDay));
+    _0x58c261.STONE_ROOF[2][1] = _0x20af5d(_0x2ec28b(0.59, !![], stoneNight));
+    _0x58c261.STONE_ROOF[3][0] = _0x20af5d(_0x3df2a8(0.59, !![], stoneDay));
+    _0x58c261.STONE_ROOF[3][1] = _0x20af5d(_0x3df2a8(0.59, !![], stoneNight));
+}
       _0x5d811b();
       function _0x194c5e(_0x1c163b) {
         if (_0x1c163b === _0x9cb2d9.id) return 1;
@@ -3173,23 +3203,62 @@
         if (_0x75ef16 && _0xa10696) return Math.sqrt((_0x75ef16.x - _0xa10696.x) ** 2 + (_0x75ef16.y - _0xa10696.y) ** 2);
         return null;
       }
-      function _0x57ab4c(_0x1fd9b0) {
-        _0x507512.save(), _0x507512.translate(_0x3b2ae4.WUF.x + _0x1fd9b0.x, _0x3b2ae4.WUF.y + _0x1fd9b0.y), _0x507512.rotate(_0x1fd9b0.angle);
-        let _0x311938, _0x4dcac4;
-        if (_0x1fd9b0[_0x57f7e4.hit][_0x57f7e4.update]) {
-          _0x1fd9b0[_0x57f7e4.hit][_0x57f7e4.anim][_0x57f7e4.update]() && _0x1fd9b0[_0x57f7e4.hit][_0x57f7e4.anim][_0x57f7e4.o] == ![] && (_0x1fd9b0[_0x57f7e4.hit][_0x57f7e4.update] = ![]);
-          let _0x42bccb = _0xcdfe98 * ((1 - _0x1fd9b0[_0x57f7e4.hit][_0x57f7e4.anim][_0x57f7e4.v]) * 600);
-          _0x311938 = _0x42bccb * Math.sin(_0x1fd9b0[_0x57f7e4.hit].angle - _0x1fd9b0.angle), _0x4dcac4 = Math.cos(_0x1fd9b0[_0x57f7e4.hit].angle - _0x1fd9b0.angle) * _0x42bccb;
-        } else _0x311938 = 0, _0x4dcac4 = 0;
-        let _0x5244a1 = _0x58c261.ROOF[_0x73cd4e.smoothRoofs ? 3 : (_0x1fd9b0[_0x57f7e4.j] + _0x1fd9b0[_0x57f7e4.i] % 2) % 3][_0x57f7e4.time],
-          _0x58f3cd = -1;
-        if (_0x73cd4e.Roof.active) _0x507512.globalAlpha = Number(_0x73cd4e.Roof.opacity);else {
-          let _0x173757 = gameWorld.fast_units[_0x57f7e4.uid];
-          if (_0x173757 && _0x194c5e(_0x1fd9b0[_0x57f7e4.pid])) _0x3e37f7(_0x1fd9b0, _0x173757) < 550 ? _0x1fd9b0[_0x57f7e4.opacity] = Math.max(_0x1fd9b0[_0x57f7e4.opacity] - _0xcdfe98, 0.3) : _0x1fd9b0[_0x57f7e4.opacity] = Math.min(_0x1fd9b0[_0x57f7e4.opacity] + _0xcdfe98, 1);else _0x173757 && _0x3e37f7(_0x1fd9b0, _0x173757) < 150 ? _0x1fd9b0[_0x57f7e4.opacity] = Math.max(_0x1fd9b0[_0x57f7e4.opacity] - _0xcdfe98, 0.3) : _0x1fd9b0[_0x57f7e4.opacity] = Math.min(_0x1fd9b0[_0x57f7e4.opacity] + _0xcdfe98, 1);
-          _0x58f3cd = _0x507512.globalAlpha, _0x507512.globalAlpha *= _0x1fd9b0[_0x57f7e4.opacity];
+     function _0x57ab4c(_0x1fd9b0) {
+    _0x507512.save();
+    _0x507512.translate(_0x3b2ae4.WUF.x + _0x1fd9b0.x, _0x3b2ae4.WUF.y + _0x1fd9b0.y);
+    _0x507512.rotate(_0x1fd9b0.angle);
+
+    let _0x311938 = 0, _0x4dcac4 = 0;
+    if (_0x1fd9b0[_0x57f7e4.hit] && _0x1fd9b0[_0x57f7e4.hit][_0x57f7e4.update]) {
+        _0x1fd9b0[_0x57f7e4.hit][_0x57f7e4.anim][_0x57f7e4.update]() && _0x1fd9b0[_0x57f7e4.hit][_0x57f7e4.anim][_0x57f7e4.o] == ![] && (_0x1fd9b0[_0x57f7e4.hit][_0x57f7e4.update] = ![]);
+        let _0x42bccb = _0xcdfe98 * ((1 - _0x1fd9b0[_0x57f7e4.hit][_0x57f7e4.anim][_0x57f7e4.v]) * 600);
+        _0x311938 = _0x42bccb * Math.sin(_0x1fd9b0[_0x57f7e4.hit].angle - _0x1fd9b0.angle);
+        _0x4dcac4 = Math.cos(_0x1fd9b0[_0x57f7e4.hit].angle - _0x1fd9b0.angle) * _0x42bccb;
+    }
+
+    // 1. АБСОЛЮТНО НАДІЙНА ПЕРЕВІРКА НА КАМІНЬ
+    // Дивимося напряму в масив кам'яних дахів гри (68)
+    let isStone = false;
+    if (typeof gameWorld !== 'undefined' && gameWorld.units && gameWorld.units[68]) {
+        isStone = gameWorld.units[68].includes(_0x1fd9b0);
+    } else if (_0x1fd9b0.isStoneRoof) {
+        isStone = true; // Запасний варіант
+    }
+
+    // 2. ВИРАХОВУЄМО ПРОЗОРІСТЬ (Opacity)
+    let _0x58f3cd = -1;
+    if (_0x73cd4e.Roof.active) {
+        _0x507512.globalAlpha = Number(_0x73cd4e.Roof.opacity);
+    } else {
+        let _0x173757 = typeof gameWorld !== 'undefined' ? gameWorld.fast_units[_0x57f7e4.uid] : null;
+        if (_0x173757 && _0x194c5e(_0x1fd9b0[_0x57f7e4.pid])) {
+            _0x1fd9b0[_0x57f7e4.opacity] = _0x3e37f7(_0x1fd9b0, _0x173757) < 550 ? Math.max(_0x1fd9b0[_0x57f7e4.opacity] - _0xcdfe98, 0.3) : Math.min(_0x1fd9b0[_0x57f7e4.opacity] + _0xcdfe98, 1);
+        } else if (_0x173757) {
+            _0x1fd9b0[_0x57f7e4.opacity] = _0x3e37f7(_0x1fd9b0, _0x173757) < 150 ? Math.max(_0x1fd9b0[_0x57f7e4.opacity] - _0xcdfe98, 0.3) : Math.min(_0x1fd9b0[_0x57f7e4.opacity] + _0xcdfe98, 1);
         }
-        _0x373076(_0x507512, _0x5244a1, _0x5244a1.width / 2 + _0x311938, _0x5244a1.height / 2 + _0x4dcac4, -_0x5244a1.width, -_0x5244a1.height), _0x58f3cd != -1 && (_0x507512.globalAlpha = _0x58f3cd), _0x507512.restore();
-      }
+        _0x58f3cd = _0x507512.globalAlpha;
+        _0x507512.globalAlpha *= (_0x1fd9b0[_0x57f7e4.opacity] || 1);
+    }
+
+    // 3. ЯКЩО ЦЕ КАМІНЬ І НЕМАЄ СІРИХ ТЕКСТУР - МАЛЮЄМО СІРИЙ КВАДРАТ І ВИХОДИМО
+    if (isStone && (typeof _0x58c261 === 'undefined' || !_0x58c261.STONE_ROOF)) {
+        _0x507512.fillStyle = (_0x57f7e4.time === 1) ? "#516770" : "#999999"; // Ніч : День
+        _0x507512.fillRect(-50 + _0x311938, -50 + _0x4dcac4, 101, 101); // Розмір ідеального кам'яного даху
+        
+        if (_0x58f3cd != -1) _0x507512.globalAlpha = _0x58f3cd;
+        _0x507512.restore();
+        return;
+    }
+
+    // 4. ЯКЩО ЦЕ ДЕРЕВО (АБО ЯКЩО СІРІ ТЕКСТУРИ ВСЕ Ж ТАКИ ЗГЕНЕРУВАЛИСЬ)
+    let _0xRoofTextures = (isStone && _0x58c261.STONE_ROOF) ? _0x58c261.STONE_ROOF : _0x58c261.ROOF;
+    let _0x5244a1 = _0xRoofTextures[_0x73cd4e.smoothRoofs ? 3 : (_0x1fd9b0[_0x57f7e4.j] + _0x1fd9b0[_0x57f7e4.i] % 2) % 3][_0x57f7e4.time];
+    
+    _0x373076(_0x507512, _0x5244a1, _0x5244a1.width / 2 + _0x311938, _0x5244a1.height / 2 + _0x4dcac4, -_0x5244a1.width, -_0x5244a1.height);
+    
+    if (_0x58f3cd != -1) _0x507512.globalAlpha = _0x58f3cd;
+    _0x507512.restore();
+}
       function _0x5750a6(_0x4ad205) {
         _0x507512.save(), _0x507512.translate(_0x3b2ae4.WUF.x + _0x4ad205.x, _0x3b2ae4.WUF.y + _0x4ad205.y), _0x507512.rotate(_0x4ad205.angle);
         let _0x26ff3a, _0x22ab66;
@@ -3811,7 +3880,7 @@
             
 _0x73cd4e.drawLeaderboardAllies && !_0x73cd4e.Hidden.active && _0x2641ab();
 
-// --- ARCT RADAR РЕНДЕР (Рисуем зеленые точки поверх мини-карты) ---
+// --- ARCT РАДАР РЕНДЕР ---
 if (window.arctAllies && !_0x73cd4e.Hidden.active && typeof gameWorld !== "undefined" && gameWorld.__NW__) {
     _0x507512.save();
     const _mTx = _0x46233c["WTI"]["translate"].x;
@@ -3824,7 +3893,6 @@ if (window.arctAllies && !_0x73cd4e.Hidden.active && typeof gameWorld !== "undef
         let rx = _mTx + (p.x / (gameWorld.__NW__ * 100)) * 193;
         let ry = _mTy + (p.y / (gameWorld.__NH__ * 100)) * 193;
         
-        // 1. Рисуем зеленую точку
         _0x507512.fillStyle = "#00FF00";
         _0x507512.beginPath();
         _0x507512.arc(rx, ry, 5, 0, Math.PI * 2);
@@ -3833,22 +3901,153 @@ if (window.arctAllies && !_0x73cd4e.Hidden.active && typeof gameWorld !== "undef
         _0x507512.strokeStyle = "#000000";
         _0x507512.stroke();
 
-        // 2. Рисуем никнейм рядом с точкой
         if (p.name) {
             _0x507512.font = "10px 'Baloo Paaji', sans-serif";
             _0x507512.textAlign = "left";
             _0x507512.textBaseline = "middle";
             _0x507512.lineWidth = 2.5;
-            _0x507512.strokeStyle = "#000000"; // Черная обводка для читаемости
-            _0x507512.fillStyle = "#FFFFFF"; // Белый текст
+            _0x507512.strokeStyle = "#000000";
+            _0x507512.fillStyle = "#FFFFFF";
             _0x507512.strokeText(p.name, rx + 8, ry);
             _0x507512.fillText(p.name, rx + 8, ry);
         }
     }
     _0x507512.restore();
 }
-// ------------------------------------------------------------------
 
+// --- ARCT ИНВЕНТАРЬ НАД ИГРОКАМИ (ЛОКАЛЬНЫЙ + СОЮЗНИКИ) ---
+if (!_0x73cd4e.Hidden.active) {
+    let targetsToDraw = [];
+
+    // 1. Добавляем себя (ТОЛЬКО ЕСЛИ ВКЛЮЧЕНО 'My Inventory')
+    if (_0x73cd4e.Inventory && _0x73cd4e.Inventory.myInv) {
+        let me = gameWorld?.fast_units?.[_0x57f7e4.uid];
+        if (me && _0x3b2ae4?.WUU?.WUV) {
+            targetsToDraw.push({
+                unit: me,
+                inv: _0x3b2ae4.WUU.WUV
+            });
+        }
+    }
+
+    // 2. Добавляем союзников (ЕСЛИ ВКЛЮЧЕНО 'Team Inventory')
+    if (_0x73cd4e.Inventory && _0x73cd4e.Inventory.teamInv && window.arctAllies) {
+        for (let id in window.arctAllies) {
+            // ПРОПУСКАЕМ СЕБЯ! (Чтобы 'Team Inv' не рисовал нас самих)
+            if (id == _0x57f7e4.uid) continue;
+
+            let ally = window.arctAllies[id];
+            let allyUnit = gameWorld?.fast_units?.[id];
+            
+            if (allyUnit && ally.inv) {
+                targetsToDraw.push({
+                    unit: allyUnit,
+                    inv: ally.inv
+                });
+            }
+        }
+    }
+
+    // 3. Рисуем инвентарь для всех собранных игроков
+    if (targetsToDraw.length > 0 && _0x3b2ae4.WUF) {
+        _0x507512.save();
+
+        targetsToDraw.forEach(target => {
+            let screenX = _0x3b2ae4.WUF.x + target.unit.x;
+            let screenY = _0x3b2ae4.WUF.y + target.unit.y - 130; 
+
+            let items = [];
+            try {
+                let wuv = target.inv; 
+                for (let key in wuv) {
+                    let item = wuv[key];
+                    if (!item) continue;
+                    
+                    let count = typeof item === 'number' ? item : (item.n ?? item.count ?? 1);
+                    if (count <= 0) continue;
+
+                    let realId = (typeof item === 'object' && item.id !== undefined) ? item.id : parseInt(key);
+                    if (isNaN(realId)) continue;
+                    
+                    let imgObj = null;
+
+                    // Ищем в панели UI
+                    if (_0x46233c?.WTJ?.items) {
+                        let uiItems = _0x46233c.WTJ.items;
+                        let foundUI = Array.isArray(uiItems) 
+                            ? uiItems.find(u => u && u.id === realId) 
+                            : Object.values(uiItems).find(u => u && u.id === realId);
+                            
+                        if (foundUI && foundUI.img && foundUI.img.src) {
+                            imgObj = foundUI.img;
+                        }
+                    }
+
+                    // Ищем в базе игры (WTF)
+                    if (!imgObj && _0x46233c?.WTF) {
+                        let wtfItem = _0x46233c.WTF.find(w => w && (w.id === realId || w.type === realId)) 
+                                    || _0x46233c.WTF[realId] 
+                                    || _0x46233c.WTF[realId / 2 - 1];
+
+                        if (wtfItem && wtfItem.info && wtfItem.info[_0x57f7e4.img]) {
+                            let rawImg = wtfItem.info[_0x57f7e4.img][0];
+                            if (rawImg) {
+                                if (rawImg.src) {
+                                    imgObj = rawImg;
+                                } else if (rawImg[_0x57f7e4.src]) {
+                                    let cachedImg = new Image();
+                                    cachedImg.src = rawImg[_0x57f7e4.src];
+                                    wtfItem.info[_0x57f7e4.img][0] = cachedImg;
+                                    imgObj = cachedImg;
+                                }
+                            }
+                        }
+                    }
+                    items.push({ count: count, img: imgObj });
+                }
+            } catch(e) {}
+
+            // Рисуем ячейки
+            if (items.length > 0) {
+                let size = 28, gap = 4, totalW = items.length * (size + gap) - gap;
+                let startX = screenX - totalW / 2;
+
+                items.forEach((itm, i) => {
+                    let ix = startX + i * (size + gap), iy = screenY;
+
+                    _0x507512.fillStyle = "#123b42";
+                    _0x507512.strokeStyle = "#0b262b";
+                    _0x507512.lineWidth = 2;
+                    _0x507512.fillRect(ix, iy, size, size);
+                    _0x507512.strokeRect(ix, iy, size, size);
+
+                    if (itm.img) {
+                        try {
+                            if (typeof _0x373076 === 'function') {
+                                _0x373076(_0x507512, itm.img, ix + 3, iy + 3, size - 6, size - 6);
+                            } else {
+                                _0x507512.drawImage(itm.img, ix + 3, iy + 3, size - 6, size - 6);
+                            }
+                        } catch(e) {}
+                    }
+
+                    if (itm.count > 1) {
+                        _0x507512.font = "bold 9px 'Baloo Paaji', sans-serif";
+                        _0x507512.textAlign = "right";
+                        _0x507512.textBaseline = "bottom";
+                        _0x507512.lineWidth = 2.5;
+                        _0x507512.strokeStyle = "#000000";
+                        _0x507512.fillStyle = "#FFFFFF";
+                        _0x507512.strokeText("x" + itm.count, ix + size - 2, iy + size - 1);
+                        _0x507512.fillText("x" + itm.count, ix + size - 2, iy + size - 1);
+                    }
+                });
+            }
+        });
+        
+        _0x507512.restore();
+    }
+}
             const _0x3c2413 = _0x73cd4e.totemOnMap.active && _0x73cd4e.totemOnMap.x != 0 && _0x73cd4e.totemOnMap.y != 0 && !_0x73cd4e.Hidden.active,
               _0x435de1 = _0x73cd4e.deathOnMap.active && _0x73cd4e.deathOnMap.x != 0 && _0x73cd4e.deathOnMap.y != 0 && !_0x73cd4e.Hidden.active;
             if (_0x3c2413 || _0x435de1) {
@@ -5009,6 +5208,14 @@ if (window.arctAllies && !_0x73cd4e.Hidden.active && typeof gameWorld !== "undef
                 'onChange': _0x372b80 => {
                   _0xa896c1.saveSettings();
                 }
+              }, {
+                'type': "checkbox",
+                'label': "Treasure Chests",
+                'object': _0x73cd4e.Tracers,
+                'property': 'TreasureChests',
+                'onChange': _0xchestChange => {
+                  _0xa896c1.saveSettings();
+                }
               }]
             }, {
               'type': "subfolder",
@@ -5684,86 +5891,24 @@ if (window.arctAllies && !_0x73cd4e.Hidden.active && typeof gameWorld !== "undef
                 });
               }
             }],
-            'Shop': [
-                {
-                    'type': 'range',
-                    'label': 'Wood Amount',
-                    'min': 1, 'max': 10000, 'step': 1,
-                    'object': _0x73cd4e,
-                    'property': 'market.wood'
-                }, {
-                    'type': 'button',
-                    'label': 'Buy Wood',
-                    'action': () => {
-                        window.arctSendBuyPacket(0, _0x73cd4e['market.wood'] || 100);
-                    }
-                },
-                {
-                    'type': 'range',
-                    'label': 'Stone Amount',
-                    'min': 1, 'max': 10000, 'step': 1,
-                    'object': _0x73cd4e,
-                    'property': 'market.stone'
-                }, {
-                    'type': 'button',
-                    'label': 'Buy Stone',
-                    'action': () => {
-                        window.arctSendBuyPacket(1, _0x73cd4e['market.stone'] || 100);
-                    }
-                },
-                {
-                    'type': 'range',
-                    'label': 'Gold Amount',
-                    'min': 1, 'max': 10000, 'step': 1,
-                    'object': _0x73cd4e,
-                    'property': 'market.gold'
-                }, {
-                    'type': 'button',
-                    'label': 'Buy Gold',
-                    'action': () => {
-                        window.arctSendBuyPacket(2, _0x73cd4e['market.gold'] || 100);
-                    }
-                },
-                {
-                    'type': 'range',
-                    'label': 'Diamond Amount',
-                    'min': 1, 'max': 10000, 'step': 1,
-                    'object': _0x73cd4e,
-                    'property': 'market.diamond'
-                }, {
-                    'type': 'button',
-                    'label': 'Buy Diamond',
-                    'action': () => {
-                        window.arctSendBuyPacket(3, _0x73cd4e['market.diamond'] || 100);
-                    }
-                },
-                {
-                    'type': 'range',
-                    'label': 'Amethyst Amount',
-                    'min': 1, 'max': 10000, 'step': 1,
-                    'object': _0x73cd4e,
-                    'property': 'market.amethyst'
-                }, {
-                    'type': 'button',
-                    'label': 'Buy Amethyst',
-                    'action': () => {
-                        window.arctSendBuyPacket(4, _0x73cd4e['market.amethyst'] || 100);
-                    }
-                },
-                {
-                    'type': 'range',
-                    'label': 'Reidite Amount',
-                    'min': 1, 'max': 10000, 'step': 1,
-                    'object': _0x73cd4e,
-                    'property': 'market.reidite'
-                }, {
-                    'type': 'button',
-                    'label': 'Buy Reidite',
-                    'action': () => {
-                        window.arctSendBuyPacket(5, _0x73cd4e['market.reidite'] || 100);
-                    }
-                }
-            ],
+            
+            'Inventory': [{
+        'type': 'checkbox',
+        'label': 'My Inventory',
+        'object': _0x73cd4e.Inventory,
+        'property': 'myInv',
+        'onChange': val => {
+          _0xa896c1.saveSettings();
+        }
+      }, {
+        'type': 'checkbox',
+        'label': 'Team Inventory',
+        'object': _0x73cd4e.Inventory,
+        'property': 'teamInv',
+        'onChange': val => {
+          _0xa896c1.saveSettings();
+        }
+      }],
             'Skin\x20Changer': [{
               'type': 'subfolder',
               'label': 'Skin',
@@ -6158,17 +6303,51 @@ if (window.arctAllies && !_0x73cd4e.Hidden.active && typeof gameWorld !== "undef
               _0x41736b == 0 && (_0x57f7e4.o = _0x3602dd), _0x41736b == 1 && (_0x57f7e4.v = _0x3602dd), _0x4487ac = ![];
             }));
           }));
+        } 
+if (_0x73cd4e.smoothRoofs || _0x73cd4e.Roof.active) {
+    let woods = gameWorld.units[47] || [];
+    let stones = gameWorld.units[68] || [];
+
+    // Ставимо власні мітки, щоб наша функція точно знала, де який дах
+    for (let i = 0; i < woods.length; i++) woods[i].isStoneRoof = false;
+    for (let i = 0; i < stones.length; i++) stones[i].isStoneRoof = true;
+
+    // Зливаємо масиви для циклу
+    let _0x15d541 = [...woods, ...stones];
+
+    for (let _0x37f78d = 0, _0x4642d4 = _0x15d541.length; _0x37f78d < _0x4642d4; _0x37f78d++) {
+        let _0x334093 = _0x15d541[_0x37f78d];
+        
+        if (!_0x334093.checked) {
+            try {
+                // Зберігаємо оригінальні функції РЯЗДІЛЬНО для дерева і каменю!
+                if (_0x334093.isStoneRoof) {
+                    !_0x439412.drawStoneRoof && (_0x439412.drawStoneRoof = _0x334093[_0x57f7e4.draw]);
+                } else {
+                    !_0x439412.drawWoodRoof && (_0x439412.drawWoodRoof = _0x334093[_0x57f7e4.draw]);
+                }
+
+                _0x334093[_0x57f7e4.draw] = function (_0x2b52fa) {
+                    // Якщо чит УВІМКНЕНО
+                    if (!_0x73cd4e.Hidden.active && (_0x73cd4e.smoothRoofs || _0x73cd4e.Roof.active)) {
+                        return _0x57ab4c(_0x334093);
+                    } else {
+                        // Якщо чит ВИМКНЕНО — викликаємо правильну оригінальну функцію
+                        if (_0x334093.isStoneRoof) {
+                            return _0x439412.drawStoneRoof.call(this, _0x2b52fa);
+                        } else {
+                            return _0x439412.drawWoodRoof.call(this, _0x2b52fa);
+                        }
+                    }
+                };
+                
+                _0x334093.checked = !![];
+            } catch (_0x1b0c2a) {
+                console.context().log("Failed To Bind Roof Drawing", _0x1b0c2a);
+            }
         }
-        if (_0x73cd4e.smoothRoofs || _0x73cd4e.Roof.active) for (let _0x37f78d = 0, _0x15d541 = [...gameWorld.units[EntityIDs.ROOF]], _0x4642d4 = _0x15d541.length; _0x37f78d < _0x4642d4; _0x37f78d++) {
-          let _0x334093 = _0x15d541[_0x37f78d];
-          if (!_0x334093.checked) try {
-            !_0x439412.drawRoof && (_0x439412.drawRoof = _0x334093[_0x57f7e4.draw]), _0x334093[_0x57f7e4.draw] = function (_0x2b52fa) {
-              if (!_0x73cd4e.Hidden.active && (_0x73cd4e.smoothRoofs || _0x73cd4e.Roof.active)) return _0x57ab4c(_0x334093);else _0x439412.drawRoof.call(this, _0x2b52fa);
-            }, _0x334093.checked = !![];
-          } catch (_0x1b0c2a) {
-            console.context().log("Failed To Bind Roof Drawing", _0x1b0c2a);
-          }
-        }
+    }
+}
         if (_0x73cd4e.ColoredSpikes.active) {
           try {
             for (let _0x434467 = 0, _0x450df0 = [...gameWorld.units[EntityIDs.WOOD_DOOR], ...gameWorld.units[EntityIDs.STONE_DOOR], ...gameWorld.units[EntityIDs.GOLD_DOOR], ...gameWorld.units[EntityIDs.DIAMOND_DOOR], ...gameWorld.units[EntityIDs.AMETHYST_DOOR], ...gameWorld.units[EntityIDs.REIDITE_DOOR], ...gameWorld.units[EntityIDs.WOOD_DOOR_SPIKE], ...gameWorld.units[EntityIDs.STONE_DOOR_SPIKE], ...gameWorld.units[EntityIDs.GOLD_DOOR_SPIKE], ...gameWorld.units[EntityIDs.DIAMOND_DOOR_SPIKE], ...gameWorld.units[EntityIDs.AMETHYST_DOOR_SPIKE], ...gameWorld.units[EntityIDs.REIDITE_DOOR_SPIKE]], _0x4eee2d = _0x450df0.length; _0x434467 < _0x4eee2d; _0x434467++) {
@@ -6610,7 +6789,11 @@ if (window.arctAllies && !_0x73cd4e.Hidden.active && typeof gameWorld !== "undef
               'name': 'Parrots',
               'setting': "Parrots",
               'units': gameWorld.units[EntityIDs.PARROT]
-            }],
+            }, {
+              'name': 'Treasure Chests',
+              'setting': 'TreasureChests',
+              'units': gameWorld.units[EntityIDs.TREASURE_CHEST]
+            }];
             _0x26ee55 = window.innerHeight / 2,
             _0x3da839 = 25;
           _0x507512.font = "18px Baloo Paaji", _0x507512.textAlign = "left", _0x507512.textBaseline = "middle";
@@ -6631,10 +6814,41 @@ if (window.arctAllies && !_0x73cd4e.Hidden.active && typeof gameWorld !== "undef
           console.context().log("Failed To Draw Tracer Animal Counts", _0x2f5dca);
         }
         try {
-          _0x73cd4e.Tracers.Krakens && gameWorld.units[EntityIDs.KRAKEN] && _0x2801de(gameWorld.units[EntityIDs.KRAKEN], '#000000'), _0x73cd4e.Tracers.Sandworms && gameWorld.units[EntityIDs.SAND_WORM] && _0x2801de(gameWorld.units[EntityIDs.SAND_WORM], '#000000'), _0x73cd4e.Tracers.BabyDragons && gameWorld.units[EntityIDs.BABY_DRAGON] && _0x2801de(gameWorld.units[EntityIDs.BABY_DRAGON], "#949494"), _0x73cd4e.Tracers.BabyLavaDragons && gameWorld.units[EntityIDs.BABY_LAVA] && _0x2801de(gameWorld.units[EntityIDs.BABY_LAVA], "#660000"), _0x73cd4e.Tracers.BabyMammoths && gameWorld.units[EntityIDs.BABY_MAMMOTH] && _0x2801de(gameWorld.units[EntityIDs.BABY_MAMMOTH], "#949494"), _0x73cd4e.Tracers.Bears && gameWorld.units[EntityIDs.BEAR] && _0x2801de(gameWorld.units[EntityIDs.BEAR], "#949494"), _0x73cd4e.Tracers.Boars && gameWorld.units[EntityIDs.BOAR] && _0x2801de(gameWorld.units[EntityIDs.BOAR], "#007512"), _0x73cd4e.Tracers.Crabs && gameWorld.units[EntityIDs.CRAB] && _0x2801de(gameWorld.units[EntityIDs.CRAB], "#948f00"), _0x73cd4e.Tracers.Dragons && gameWorld.units[EntityIDs.DRAGON] && _0x2801de(gameWorld.units[EntityIDs.DRAGON], "#949494"), _0x73cd4e.Tracers.FireMobs && gameWorld.units[EntityIDs.FLAME] && _0x2801de(gameWorld.units[EntityIDs.FLAME], '#660000'), _0x73cd4e.Tracers.Foxes && gameWorld.units[EntityIDs.FOX] && _0x2801de(gameWorld.units[EntityIDs.FOX], "#949494"), _0x73cd4e.Tracers.Hawks && gameWorld.units[EntityIDs.HAWK] && _0x2801de(gameWorld.units[EntityIDs.HAWK], "#007512"), _0x73cd4e.Tracers.KingCrabs && gameWorld.units[EntityIDs.CRAB_BOSS] && _0x2801de(gameWorld.units[EntityIDs.CRAB_BOSS], '#948f00'), _0x73cd4e.Tracers.LavaDragons && gameWorld.units[EntityIDs.LAVA_DRAGON] && _0x2801de(gameWorld.units[EntityIDs.LAVA_DRAGON], "#660000"), _0x73cd4e.Tracers.Mammoths && gameWorld.units[EntityIDs.MAMMOTH] && _0x2801de(gameWorld.units[EntityIDs.MAMMOTH], '#949494'), _0x73cd4e.Tracers.Penguins && gameWorld.units[EntityIDs.PENGUIN] && _0x2801de(gameWorld.units[EntityIDs.PENGUIN], "#949494"), _0x73cd4e.Tracers.Piranhas && gameWorld.units[EntityIDs.PIRANHA] && _0x2801de(gameWorld.units[EntityIDs.PIRANHA], "#000c78"), _0x73cd4e.Tracers.Rabbits && gameWorld.units[EntityIDs.RABBIT] && _0x2801de(gameWorld.units[EntityIDs.RABBIT], "#007512"), _0x73cd4e.Tracers.Spiders && gameWorld.units[EntityIDs.SPIDER] && _0x2801de(gameWorld.units[EntityIDs.SPIDER], "#007512"), _0x73cd4e.Tracers.Vultures && gameWorld.units[EntityIDs.VULTURE] && _0x2801de(gameWorld.units[EntityIDs.VULTURE], "#948f00"), _0x73cd4e.Tracers.Wolfs && gameWorld.units[EntityIDs.WOLF] && _0x2801de(gameWorld.units[EntityIDs.WOLF], "#007512"), _0x73cd4e.Tracers.Crocodiles && gameWorld.units[EntityIDs.CROCODILE] && _0x2801de(gameWorld.units[EntityIDs.CROCODILE], "#003c12"), _0x73cd4e.Tracers.GoldenChickens && gameWorld.units[EntityIDs.GOLDEN_CHICKEN] && _0x2801de(gameWorld.units[EntityIDs.GOLDEN_CHICKEN], "#007512"), _0x73cd4e.Tracers.GoldenHens && gameWorld.units[EntityIDs.GOLDEN_HEN] && _0x2801de(gameWorld.units[EntityIDs.GOLDEN_HEN], '#007512'), _0x73cd4e.Tracers.Ocelots && gameWorld.units[EntityIDs.OCELOT] && _0x2801de(gameWorld.units[EntityIDs.OCELOT], "#003c12"), _0x73cd4e.Tracers.Parrots && gameWorld.units[EntityIDs.PARROT] && _0x2801de(gameWorld.units[EntityIDs.PARROT], "#003c12");
+          _0x73cd4e.Tracers.Krakens && gameWorld.units[EntityIDs.KRAKEN] && _0x2801de(gameWorld.units[EntityIDs.KRAKEN], '#000000'), 
+          _0x73cd4e.Tracers.Sandworms && gameWorld.units[EntityIDs.SAND_WORM] && _0x2801de(gameWorld.units[EntityIDs.SAND_WORM], '#000000'), 
+          _0x73cd4e.Tracers.BabyDragons && gameWorld.units[EntityIDs.BABY_DRAGON] && _0x2801de(gameWorld.units[EntityIDs.BABY_DRAGON], "#949494"), 
+          _0x73cd4e.Tracers.BabyLavaDragons && gameWorld.units[EntityIDs.BABY_LAVA] && _0x2801de(gameWorld.units[EntityIDs.BABY_LAVA], "#660000"), 
+          _0x73cd4e.Tracers.BabyMammoths && gameWorld.units[EntityIDs.BABY_MAMMOTH] && _0x2801de(gameWorld.units[EntityIDs.BABY_MAMMOTH], "#949494"), 
+          _0x73cd4e.Tracers.Bears && gameWorld.units[EntityIDs.BEAR] && _0x2801de(gameWorld.units[EntityIDs.BEAR], "#949494"), 
+          _0x73cd4e.Tracers.Boars && gameWorld.units[EntityIDs.BOAR] && _0x2801de(gameWorld.units[EntityIDs.BOAR], "#007512"), 
+          _0x73cd4e.Tracers.Crabs && gameWorld.units[EntityIDs.CRAB] && _0x2801de(gameWorld.units[EntityIDs.CRAB], "#948f00"), 
+          _0x73cd4e.Tracers.Dragons && gameWorld.units[EntityIDs.DRAGON] && _0x2801de(gameWorld.units[EntityIDs.DRAGON], "#949494"), 
+          _0x73cd4e.Tracers.FireMobs && gameWorld.units[EntityIDs.FLAME] && _0x2801de(gameWorld.units[EntityIDs.FLAME], '#660000'), 
+          _0x73cd4e.Tracers.Foxes && gameWorld.units[EntityIDs.FOX] && _0x2801de(gameWorld.units[EntityIDs.FOX], "#949494"), 
+          _0x73cd4e.Tracers.Hawks && gameWorld.units[EntityIDs.HAWK] && _0x2801de(gameWorld.units[EntityIDs.HAWK], "#007512"), 
+          _0x73cd4e.Tracers.KingCrabs && gameWorld.units[EntityIDs.CRAB_BOSS] && _0x2801de(gameWorld.units[EntityIDs.CRAB_BOSS], '#948f00'), 
+          _0x73cd4e.Tracers.LavaDragons && gameWorld.units[EntityIDs.LAVA_DRAGON] && _0x2801de(gameWorld.units[EntityIDs.LAVA_DRAGON], "#660000"), 
+          _0x73cd4e.Tracers.Mammoths && gameWorld.units[EntityIDs.MAMMOTH] && _0x2801de(gameWorld.units[EntityIDs.MAMMOTH], '#949494'), 
+          _0x73cd4e.Tracers.Penguins && gameWorld.units[EntityIDs.PENGUIN] && _0x2801de(gameWorld.units[EntityIDs.PENGUIN], "#949494"), 
+          _0x73cd4e.Tracers.Piranhas && gameWorld.units[EntityIDs.PIRANHA] && _0x2801de(gameWorld.units[EntityIDs.PIRANHA], "#000c78"), 
+          _0x73cd4e.Tracers.Rabbits && gameWorld.units[EntityIDs.RABBIT] && _0x2801de(gameWorld.units[EntityIDs.RABBIT], "#007512"), 
+          _0x73cd4e.Tracers.Spiders && gameWorld.units[EntityIDs.SPIDER] && _0x2801de(gameWorld.units[EntityIDs.SPIDER], "#007512"), 
+          _0x73cd4e.Tracers.Vultures && gameWorld.units[EntityIDs.VULTURE] && _0x2801de(gameWorld.units[EntityIDs.VULTURE], "#948f00"), 
+          _0x73cd4e.Tracers.Wolfs && gameWorld.units[EntityIDs.WOLF] && _0x2801de(gameWorld.units[EntityIDs.WOLF], "#007512"), 
+          _0x73cd4e.Tracers.Crocodiles && gameWorld.units[EntityIDs.CROCODILE] && _0x2801de(gameWorld.units[EntityIDs.CROCODILE], "#003c12"), 
+          _0x73cd4e.Tracers.GoldenChickens && gameWorld.units[EntityIDs.GOLDEN_CHICKEN] && _0x2801de(gameWorld.units[EntityIDs.GOLDEN_CHICKEN], "#007512"), 
+          _0x73cd4e.Tracers.GoldenHens && gameWorld.units[EntityIDs.GOLDEN_HEN] && _0x2801de(gameWorld.units[EntityIDs.GOLDEN_HEN], '#007512'), 
+          _0x73cd4e.Tracers.Ocelots && gameWorld.units[EntityIDs.OCELOT] && _0x2801de(gameWorld.units[EntityIDs.OCELOT], "#003c12"), 
+          _0x73cd4e.Tracers.Parrots && gameWorld.units[EntityIDs.PARROT] && _0x2801de(gameWorld.units[EntityIDs.PARROT], "#003c12"),
+          _0x73cd4e.Tracers.TreasureChests && gameWorld.units[EntityIDs.TREASURE_CHEST] && _0x2801de(gameWorld.units[EntityIDs.TREASURE_CHEST], "#FFD700");
         } catch (_0x5da578) {
           console.context().log("Failed To Draw Animal Tracers", _0x5da578);
         }
+        try {
+  _0x73cd4e.Tracers.TreasureChests && gameWorld.units[EntityIDs.TREASURE_CHEST] && _0x2801de(gameWorld.units[EntityIDs.TREASURE_CHEST], "#FFD700");
+} catch (_0x5da578) {
+  console.context().log("Failed To Draw Treasure Chest Tracers", _0x5da578);
+}
         if (_0x73cd4e.movementPredictor) try {
           for (let _0x340718 = 0, _0x3ba5bf = [...gameWorld.units[EntityIDs.PARROT], ...gameWorld.units[EntityIDs.GOLDEN_HEN], ...gameWorld.units[EntityIDs.DEAD_BOX], ...gameWorld.units[EntityIDs.TREASURE_CHEST], ...gameWorld.units[EntityIDs.CRATE], ...gameWorld.units[EntityIDs.PENGUIN], ...gameWorld.units[EntityIDs.FOX], ...gameWorld.units[EntityIDs.BEAR], ...gameWorld.units[EntityIDs.PIRANHA], ...gameWorld.units[EntityIDs.CRAB], ...gameWorld.units[EntityIDs.FLAME], ...gameWorld.units[EntityIDs.LAVA_DRAGON], ...gameWorld.units[EntityIDs.BOAR], ...gameWorld.units[EntityIDs.CRAB_BOSS], ...gameWorld.units[EntityIDs.BABY_DRAGON], ...gameWorld.units[EntityIDs.BABY_LAVA], ...gameWorld.units[EntityIDs.BABY_MAMMOTH], ...gameWorld.units[EntityIDs.MAMMOTH], ...gameWorld.units[EntityIDs.PLAYERS], ...gameWorld.units[EntityIDs.RABBIT], ...gameWorld.units[EntityIDs.SAND_WORM], ...gameWorld.units[EntityIDs.WOLF], ...gameWorld.units[EntityIDs.SPIDER], ...gameWorld.units[EntityIDs.HAWK], ...gameWorld.units[EntityIDs.VULTURE], ...gameWorld.units[EntityIDs.DRAGON], ...gameWorld.units[EntityIDs.KRAKEN]], _0x317508 = _0x3ba5bf.length; _0x340718 < _0x317508; ++_0x340718) {
             let _0x2ab050 = _0x3ba5bf[_0x340718];
@@ -9772,7 +9986,7 @@ window.arctAllies = {};
                 if (ws.readyState === WebSocket.OPEN && window.v2603 && window.v2605 && window.v2605.uid) {
                     const me = window.v2603.fast_units[window.v2605.uid];
                     if (me) {
-                        // 1. Берем ник из памяти браузера или из игры
+                        // 1. Беремо нік
                         let savedName = localStorage.getItem('arct_radar_name');
                         let myName = (savedName && savedName.trim() !== "") ? savedName.trim() : "";
                         if (myName === "") {
@@ -9784,10 +9998,7 @@ window.arctAllies = {};
                             }
                         }
 
-                        // 2. Отправляем позицию и ник (старый рабочий функционал)
-                        ws.send(JSON.stringify({ type: 'pos', x: me.x, y: me.y, name: myName }));
-
-                        // 3. Отправляем инвентарь отдельным пакетом (новая функция, не ломающая старое)
+                        // 2. Збираємо інвентар
                         let myInventory = {};
                         try {
                             let invObj = window.v2604 && window.v2604.WUU ? window.v2604.WUU.WUV : null;
@@ -9800,7 +10011,15 @@ window.arctAllies = {};
                             }
                         } catch(err) {}
 
-                        ws.send(JSON.stringify({ type: 'inv', inv: myInventory }));
+                        // 3. Відправляємо все разом
+                        ws.send(JSON.stringify({ 
+                            type: 'pos', 
+                            uid: window.v2605.uid,
+                            x: me.x, 
+                            y: me.y, 
+                            name: myName,
+                            inv: myInventory 
+                        }));
                     }
                 }
             }, 500);
@@ -9808,38 +10027,4 @@ window.arctAllies = {};
     }
 
     setTimeout(initRadar, 3000);
-})();
-// --- ARCT WEBSOCKET SHOP HANDLER (Вставити в самий кінець коду) ---
-(function() {
-    window.arctSendBuyPacket = async function(itemIndex, totalAmount) {
-        let sock = window.v2600;
-        if (!sock || !sock.websocket) {
-            for (let k in window) {
-                if (window[k] && typeof window[k] === 'object' && window[k].websocket && window[k].websocket.readyState === 1) {
-                    sock = window[k]; break;
-                }
-            }
-        }
-        
-        if (!sock || !sock.websocket || sock.websocket.readyState !== 1) return;
-
-        if (totalAmount > 10000) totalAmount = 10000;
-        if (totalAmount <= 0) return;
-
-        let remaining = totalAmount;
-
-        while (remaining > 0) {
-            let batch = remaining > 83 ? 80 : remaining;
-            
-            // Відправляємо пакет через сокет [39, кількість, ID_предмета]
-            let packet = [39, batch, itemIndex];
-            WebSocket.prototype.send.call(sock.websocket, JSON.stringify(packet));
-            
-            remaining -= batch;
-            
-            if (remaining > 0) {
-                await new Promise(r => setTimeout(r, 100)); 
-            }
-        }
-    };
-})();
+})();;
