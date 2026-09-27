@@ -1,504 +1,12 @@
-/* --- ARCT Cheats: Draggable Autotake Panel + Radar + Static Box ESP (Overlay Fix) --- */
-(function() {
-    'use strict';
-
-    // ==========================================
-    // 1. КОНФИГ И СОЗДАНИЕ ПАНЕЛИ
-    // ==========================================
-    const defaultBindings = {
-        togglePanel: "KeyH",
-        ext: "KeyL",
-        bread: "KeyB",
-        steal: "KeyQ"
-    };
-
-    let savedBindings;
-    try {
-        savedBindings = JSON.parse(localStorage.getItem('arct_autotake_bindings')) || defaultBindings;
-    } catch (e) {
-        savedBindings = defaultBindings;
-    }
-
-    const arctConfig = {
-        ext: false,
-        bread: false,
-        steal: false,
-        boxInfo: true, // ESP включен по умолчанию
-        bindings: savedBindings
-    };
-
-    let listeningKeyFor = null;
-
-    window.addEventListener('DOMContentLoaded', () => { createPanel(); setupEspCanvas(); });
-    if (document.readyState === 'complete' || document.readyState === 'interactive') {
-        setTimeout(() => { createPanel(); setupEspCanvas(); }, 1000);
-    }
-
-    function createPanel() {
-        if (document.getElementById('arct-autotake-panel')) return;
-
-        const panel = document.createElement('div');
-        panel.id = 'arct-autotake-panel';
-        panel.style.cssText = `
-            position: fixed; 
-            top: 100px; 
-            left: 20px; 
-            background: rgba(18, 18, 20, 0.94); 
-            border: 1px solid rgba(255, 255, 255, 0.18); 
-            border-radius: 8px; 
-            padding: 14px; 
-            color: #e0e0e0; 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
-            font-size: 13px;
-            z-index: 999999; 
-            user-select: none; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.7);
-            min-width: 250px;
-        `;
-
-        panel.innerHTML = `
-            <div id="arct-panel-header" style="font-weight: 700; margin-bottom: 12px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.12); padding-bottom: 8px; color: #00ffcc; cursor: move; letter-spacing: 0.5px; display: flex; justify-content: space-between; align-items: center;">
-                <span>ARCT cheats</span>
-                <button id="btn-bind-togglePanel" class="arct-bind-btn" data-action="togglePanel" style="font-size: 10px; background: rgba(0,255,204,0.15); border: 1px solid rgba(0,255,204,0.3); padding: 2px 6px; border-radius: 4px; color: #00ffcc; cursor: pointer; font-weight: bold;" title="Change panel toggle key">${formatKey(arctConfig.bindings.togglePanel)}</button>
-            </div>
-            
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                <label for="arct-ext" style="cursor: pointer;">Extractor take</label>
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <input type="checkbox" id="arct-ext" style="cursor: pointer; width: 15px; height: 15px;">
-                    <button id="btn-bind-ext" class="arct-bind-btn" data-action="ext" style="font-size: 11px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.25); padding: 3px 8px; border-radius: 4px; color: #fff; cursor: pointer; min-width: 32px; text-align: center; font-weight: bold;">${formatKey(arctConfig.bindings.ext)}</button>
-                </div>
-            </div>
-
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                <label for="arct-bread" style="cursor: pointer;">Bread take</label>
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <input type="checkbox" id="arct-bread" style="cursor: pointer; width: 15px; height: 15px;">
-                    <button id="btn-bind-bread" class="arct-bind-btn" data-action="bread" style="font-size: 11px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.25); padding: 3px 8px; border-radius: 4px; color: #fff; cursor: pointer; min-width: 32px; text-align: center; font-weight: bold;">${formatKey(arctConfig.bindings.bread)}</button>
-                </div>
-            </div>
-
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <label for="arct-steal" style="cursor: pointer;">Auto Steal <span style="font-size: 10px; color: #888;">(Hold)</span></label>
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <input type="checkbox" id="arct-steal" style="cursor: pointer; width: 15px; height: 15px;">
-                    <button id="btn-bind-steal" class="arct-bind-btn" data-action="steal" style="font-size: 11px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.25); padding: 3px 8px; border-radius: 4px; color: #fff; cursor: pointer; min-width: 32px; text-align: center; font-weight: bold;">${formatKey(arctConfig.bindings.steal)}</button>
-                </div>
-            </div>
-
-            <div style="border-top: 1px solid rgba(255,255,255,0.12); margin-top: 10px; padding-top: 10px;">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <label for="arct-boxinfo" style="cursor: pointer; color: #00ffcc; font-weight: bold;">BoxInfo</label>
-                    <input type="checkbox" id="arct-boxinfo" style="cursor: pointer; width: 15px; height: 15px;" checked>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(panel);
-
-        const header = document.getElementById('arct-panel-header');
-        let isDragging = false, startX, startY;
-
-        header.addEventListener('mousedown', (e) => {
-            if (e.target.tagName === 'BUTTON') return;
-            isDragging = true;
-            startX = e.clientX - panel.offsetLeft;
-            startY = e.clientY - panel.offsetTop;
-            e.preventDefault();
-        });
-
-        document.addEventListener('mousemove', (e) => {
-            if (!isDragging) return;
-            panel.style.left = (e.clientX - startX) + 'px';
-            panel.style.top = (e.clientY - startY) + 'px';
-        });
-
-        document.addEventListener('mouseup', () => { isDragging = false; });
-
-        document.getElementById('arct-ext').addEventListener('change', (e) => arctConfig.ext = e.target.checked);
-        document.getElementById('arct-bread').addEventListener('change', (e) => arctConfig.bread = e.target.checked);
-        document.getElementById('arct-steal').addEventListener('change', (e) => arctConfig.steal = e.target.checked);
-        document.getElementById('arct-boxinfo').addEventListener('change', (e) => arctConfig.boxInfo = e.target.checked);
-
-        const bindButtons = panel.querySelectorAll('.arct-bind-btn');
-        bindButtons.forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const action = btn.getAttribute('data-action');
-                listeningKeyFor = action;
-                btn.innerText = "...";
-                btn.style.color = "#00ffcc";
-            });
-        });
-    }
-
-    function formatKey(code) {
-        if (!code) return "NONE";
-        return code.replace("Key", "").replace("Digit", "");
-    }
-
-    window.addEventListener('keydown', (e) => {
-        if (listeningKeyFor) {
-            e.preventDefault();
-            const action = listeningKeyFor;
-            arctConfig.bindings[action] = e.code;
-            localStorage.setItem('arct_autotake_bindings', JSON.stringify(arctConfig.bindings));
-            
-            const btn = document.getElementById(`btn-bind-${action}`);
-            if (btn) {
-                btn.innerText = formatKey(e.code);
-                btn.style.color = action === 'togglePanel' ? "#00ffcc" : "#fff";
-            }
-            listeningKeyFor = null;
-            return;
-        }
-
-        if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
-
-        const panel = document.getElementById('arct-autotake-panel');
-        if (!panel) return;
-
-        if (e.code === arctConfig.bindings.togglePanel && !e.repeat) {
-            panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
-        }
-        else if (e.code === arctConfig.bindings.ext && !e.repeat) {
-            arctConfig.ext = !arctConfig.ext;
-            const chk = document.getElementById('arct-ext');
-            if (chk) chk.checked = arctConfig.ext;
-        }
-        else if (e.code === arctConfig.bindings.bread && !e.repeat) {
-            arctConfig.bread = !arctConfig.bread;
-            const chk = document.getElementById('arct-bread');
-            if (chk) chk.checked = arctConfig.bread;
-        }
-        else if (e.code === arctConfig.bindings.steal) {
-            arctConfig.steal = true;
-            const chk = document.getElementById('arct-steal');
-            if (chk) chk.checked = true;
-        }
-    });
-
-    window.addEventListener('keyup', (e) => {
-        if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
-        if (e.code === arctConfig.bindings.steal) {
-            arctConfig.steal = false;
-            const chk = document.getElementById('arct-steal');
-            if (chk) chk.checked = false;
-        }
-    });
-
-    // ==========================================
-    // 2. ЛОГИКА АВТОСБОРА
-    // ==========================================
-    function runStandaloneAutotake() {
-        try {
-            if (!arctConfig.ext && !arctConfig.bread && !arctConfig.steal) return;
-
-            let sock = window.v2600;
-            if (!sock || !sock.websocket) {
-                for (let k in window) {
-                    if (window[k] && typeof window[k] === 'object' && window[k].websocket && window[k].websocket.readyState === 1) {
-                        sock = window[k]; break;
-                    }
-                }
-            }
-            if (!sock || !sock.websocket || sock.websocket.readyState !== 1) return;
-
-            let world = window.v2603;
-            if (!world || !world.units || !world.fast_units) {
-                for (let k in window) {
-                    let obj = window[k];
-                    if (obj && typeof obj === 'object' && obj.units && obj.fast_units) {
-                        world = obj; break;
-                    }
-                }
-            }
-            if (!world || !world.fast_units) return;
-
-            let mapKeys = window.v2605;
-            if (!mapKeys) {
-                for (let k in window) {
-                    let obj = window[k];
-                    if (obj && typeof obj === 'object' && obj.uid !== undefined) {
-                        mapKeys = obj; break;
-                    }
-                }
-            }
-
-            const uid = mapKeys ? mapKeys.uid : (window.v2605 ? window.v2605.uid : undefined);
-            if (uid === undefined) return;
-
-            let player = world.fast_units[uid];
-            if (!player) return;
-
-            const pidKey = mapKeys ? (mapKeys.playerIdKey || mapKeys.pid || "playerId") : "playerId";
-            const sendPacket = (packet) => {
-                WebSocket.prototype.send.call(sock.websocket, JSON.stringify(packet));
-            };
-
-            if (arctConfig.ext) {
-                for (let type = 24; type <= 37; type++) {
-                    let list = world.units[type];
-                    if (!list || !Array.isArray(list)) continue;
-                    for (let i = 0; i < list.length; i++) {
-                        let ext = list[i];
-                        if (!ext || ext.x === undefined) continue;
-                        if (Math.hypot(player.x - ext.x, player.y - ext.y) < 300) {
-                            if (((Number(ext.info) & 65280) >> 8) > 0) {
-                                let pid = ext[pidKey], iid = ext.id;
-                                if (pid !== undefined && iid !== undefined) sendPacket([12, pid, iid, type]);
-                            }
-                        }
-                    }
-                }
-            }
-
-            if (arctConfig.bread) {
-                let mills = world.units[41];
-                if (mills && Array.isArray(mills)) {
-                    for (let j = 0; j < mills.length; j++) {
-                        let mill = mills[j];
-                        if (!mill || mill.x === undefined) continue;
-                        if (Math.hypot(player.x - mill.x, player.y - mill.y) < 300) {
-                            if (((Number(mill.info) & 65280) >> 8) > 0) {
-                                let pid = mill[pidKey], iid = mill.id;
-                                if (pid !== undefined && iid !== undefined) sendPacket([1, pid, iid]);
-                            }
-                        }
-                    }
-                }
-                let furnaces = world.units[43];
-                if (furnaces && Array.isArray(furnaces)) {
-                    for (let j = 0; j < furnaces.length; j++) {
-                        let furnace = furnaces[j];
-                        if (!furnace || furnace.x === undefined) continue;
-                        if (Math.hypot(player.x - furnace.x, player.y - furnace.y) < 300) {
-                            if (((Number(furnace.info) & 31744) >> 10) > 0) {
-                                let pid = furnace[pidKey], iid = furnace.id;
-                                if (pid !== undefined && iid !== undefined) sendPacket([28, pid, iid]);
-                            }
-                        }
-                    }
-                }
-            }
-
-            if (arctConfig.steal) {
-                let chests = world.units[11];
-                if (chests && Array.isArray(chests)) {
-                    for (let k = 0; k < chests.length; k++) {
-                        let chest = chests[k];
-                        if (!chest || chest.x === undefined) continue;
-                        if (Math.hypot(player.x - chest.x, player.y - chest.y) < 300) {
-                            let pid = chest[pidKey], iid = chest.id;
-                            if (pid !== undefined && iid !== undefined) {
-                                if (chest.lock === 1) {
-                                    sendPacket([17, pid, iid]); sendPacket([18, pid, iid]);
-                                } else if (chest.action !== 0) {
-                                    sendPacket([18, pid, iid]);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        } catch (e) {}
-    }
-
-    setInterval(runStandaloneAutotake, 400);
-
-    // ==========================================
-    // 3. RADAR & INVENTORY
-    // ==========================================
-    window.arctAllies = {};
-    function initRadar() {
-        try {
-            const ws = new WebSocket('wss://mazurenok.duckdns.org');
-            ws.onmessage = (e) => {
-                try { window.arctAllies = JSON.parse(e.data); } catch(err){}
-            };
-            
-            setInterval(() => {
-                if (ws.readyState !== WebSocket.OPEN) return;
-                let world = window.v2603 || (function(){ for(let k in window) if(window[k] && window[k].fast_units) return window[k]; })();
-                let mapKeys = window.v2605 || (function(){ for(let k in window) if(window[k] && window[k].uid !== undefined) return window[k]; })();
-                if (!world || !mapKeys || mapKeys.uid === undefined) return;
-                let me = world.fast_units[mapKeys.uid];
-                if (!me) return;
-
-                let savedName = localStorage.getItem('arct_radar_name');
-                let myName = (savedName && savedName.trim() !== "") ? savedName.trim() : "";
-                if (!myName) {
-                    let nickInput = document.getElementById('nickname');
-                    myName = (nickInput && nickInput.value) ? nickInput.value.trim() : "ARCT";
-                }
-
-                let myInventory = [];
-                try {
-                    let userInst = window.__azonCapture ? window.__azonCapture.instances.get('user') : null;
-                    userInst = userInst || (window.v2604 ? window.v2604.WUU : null);
-                    if (userInst) {
-                        let invObj = null;
-                        for (let k in userInst) {
-                            if (userInst[k] && typeof userInst[k] === 'object' && userInst[k].max !== undefined) {
-                                invObj = userInst[k]; break;
-                            }
-                        }
-                        if (!invObj && userInst.WUV) invObj = userInst.WUV;
-                        if (invObj) {
-                            for (let k in invObj) {
-                                let arr = invObj[k];
-                                if (Array.isArray(arr) && arr.length > 0 && arr.length < 50) {
-                                    let isQuantityArray = false;
-                                    for (let i = 0; i < arr.length; i++) {
-                                        let v = arr[i];
-                                        let num = typeof v === 'number' ? v : (v ? (v.id !== undefined ? v.id : v.n) : null);
-                                        if (num !== null && num > 400) { isQuantityArray = true; break; }
-                                    }
-                                    if (isQuantityArray) continue;
-                                    for (let i = 0; i < arr.length; i++) {
-                                        let val = arr[i];
-                                        if (val != null) {
-                                            let id = typeof val === 'number' ? val : (val.id !== undefined ? val.id : val.n);
-                                            if (id !== null && typeof id === 'number' && id >= 0) myInventory.push(id);
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                } catch(err) {}
-
-                myInventory = [...new Set(myInventory)];
-                ws.send(JSON.stringify({ type: 'pos', x: me.x, y: me.y, name: myName, inv: myInventory }));
-            }, 500);
-        } catch(e){}
-    }
-    setTimeout(initRadar, 3000);
-
-    // ==========================================
-    // 4. ИДЕАЛЬНО СТАТИЧНЫЙ ESP (НА ПРОЗРАЧНОМ ХОЛСТЕ)
-    // ==========================================
-    let espCtx = null;
-    let espCanvas = null;
-
-    function setupEspCanvas() {
-        if (document.getElementById('arct-box-esp')) return;
-        espCanvas = document.createElement('canvas');
-        espCanvas.id = 'arct-box-esp';
-        // z-index высокий, pointer-events: none (чтобы клики проходили сквозь него в игру)
-        espCanvas.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;pointer-events:none;z-index:99998;';
-        document.body.appendChild(espCanvas);
-        espCtx = espCanvas.getContext('2d');
-
-        const resize = () => { 
-            espCanvas.width = window.innerWidth; 
-            espCanvas.height = window.innerHeight; 
-        };
-        window.addEventListener('resize', resize);
-        resize();
-
-        requestAnimationFrame(renderBoxInfo);
-    }
-
-    function updateBoxState(entity, maxTime) {
-        if (!entity._arctBoxInfo) {
-            entity._arctBoxInfo = {
-                timeLeft: maxTime,
-                lastUpdate: Date.now(),
-                hits: 0,
-                wasHitting: true
-            };
-        }
-        
-        let now = Date.now();
-        if (entity.action === 2 && entity._arctBoxInfo.wasHitting) {
-            entity._arctBoxInfo.wasHitting = false;
-            entity._arctBoxInfo.hits++;
-        } else if (entity.action !== 2) {
-            entity._arctBoxInfo.wasHitting = true;
-        }
-
-        let delta = (now - entity._arctBoxInfo.lastUpdate) / 1000;
-        if (delta > 0 && maxTime > 0) {
-            entity._arctBoxInfo.timeLeft = Math.max(0, entity._arctBoxInfo.timeLeft - delta);
-            entity._arctBoxInfo.lastUpdate = now;
-        }
-        
-        return entity._arctBoxInfo;
-    }
-
-    function drawBoxText(x, y, lines) {
-        espCtx.font = "bold 15px 'Baloo Paaji', Arial, sans-serif";
-        espCtx.textAlign = "center";
-        espCtx.lineWidth = 4;
-        espCtx.strokeStyle = "#000000"; 
-        espCtx.fillStyle = "#00FFFF";  
-
-        lines.forEach((line, index) => {
-            let py = y + (index * 18);
-            espCtx.strokeText(line, x, py);
-            espCtx.fillText(line, x, py);
-        });
-    }
-
-    function renderBoxInfo() {
-        if (!espCtx || !espCanvas) return requestAnimationFrame(renderBoxInfo);
-        
-        espCtx.clearRect(0, 0, espCanvas.width, espCanvas.height);
-        
-        if (arctConfig.boxInfo) {
-            let world = window.v2603 || (function(){ for(let k in window) if(window[k] && window[k].fast_units) return window[k]; })();
-            let mapKeys = window.v2605 || (function(){ for(let k in window) if(window[k] && window[k].uid !== undefined) return window[k]; })();
-            let userInst = window.v2604 || (function(){ for(let k in window) if(window[k] && window[k].WUF) return window[k]; })();
-
-            if (world && world.units && world.fast_units && mapKeys && mapKeys.uid !== undefined && userInst && userInst.WUF) {
-                let me = world.fast_units[mapKeys.uid];
-                
-                // Идеально сглаженные координаты камеры из ядра игры
-                let camX = userInst.WUF.x;
-                let camY = userInst.WUF.y;
-
-                if (me && typeof camX === 'number' && typeof camY === 'number') {
-                    
-                    const drawEntities = (typeId, timeLimit, showTimeAndName) => {
-                        let entities = world.units[typeId];
-                        if (entities && Array.isArray(entities)) {
-                            for (let i = 0; i < entities.length; i++) {
-                                let ent = entities[i];
-                                if (!ent || ent.x === undefined || ent.y === undefined) continue;
-                                
-                                // Позиция камеры + реальные координаты объекта на карте = статичный текст
-                                let screenX = camX + ent.x;
-                                let screenY = camY + ent.y - 25;
-                                
-                                if (screenX > -100 && screenX < window.innerWidth + 100 && 
-                                    screenY > -100 && screenY < window.innerHeight + 100) {
-                                    
-                                    let state = updateBoxState(ent, timeLimit);
-                                    let lines = [];
-                                    
-                                    if (showTimeAndName) {
-                                        lines.push(typeId === 102 ? "Drop" : "Dead");
-                                        lines.push("Time: " + state.timeLeft.toFixed(1) + "s");
-                                    }
-                                    lines.push("Hits: " + state.hits);
-                                    
-                                    drawBoxText(screenX, screenY, lines);
-                                }
-                            }
-                        }
-                    };
-
-                    drawEntities(103, 0, false);   // Gift
-                    drawEntities(97, 0, false);    // Treasure Chest
-                    drawEntities(102, 16, true);   // Crate
-                    drawEntities(98, 240, true);   // Dead Box
-                }
-            }
-        }
-        
-        requestAnimationFrame(renderBoxInfo);
-    }
-})(); 
+// Принудительно заставляем браузер думать, что вкладка всегда активна (обход замедления таймеров)
+Object.defineProperty(document, 'hidden', { value: false, configurable: true });
+Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true });
+window.addEventListener('blur', (e) => e.stopImmediatePropagation(), true);
+// Держим вкладку «активной» для браузера через фоновый аудио-контекст, чтобы таймеры не засыпали при сворачивании
+const audioCtxDummy = new (window.AudioContext || window.webkitAudioContext)();
+setInterval(() => {
+    if (audioCtxDummy.state === 'suspended') audioCtxDummy.resume();
+}, 1000);
 (function (_0x2c6fbf, _0xec39e) {
   const _0x39d989 = _0x2c6fbf();
   while (!![]) {
@@ -923,135 +431,9 @@
         _0xfb8a29 = 0,
         _0x40e32d = 0,
         _0x52e652 = 0;
-      function _0x3d48c0() {
-        const _0x5813a6 = Date.now();
-        if (_0x5813a6 - _0x499bb4 < 5000) {
-          _0x12a87d("#3b3b3b", "Please wait 5 seconds before using that!");
-          return;
-        } else _0x12a87d("#3b3b3b", "Sending request to Token Holder!"), _0x499bb4 = _0x5813a6;
-        let _0x3bc846 = _0x53166f.websocket.url.split('?')[0],
-          _0x1b5a90 = _0x73cd4e.localToken.Token,
-          _0x3587ab = _0x73cd4e.localToken.TokenID,
-          _0x57347f = 0,
-          _0x42a94b,
-          _0x343e44;
-        switch (_0x73cd4e.tokenHolder.seedToPlace) {
-          case "Berry Seed":
-            _0x57347f = 206;
-            break;
-          case "Wheat Seed":
-            _0x57347f = 225;
-            break;
-          case 'Pumpkin\x20Seed':
-            _0x57347f = 290;
-            break;
-          case 'Carrot\x20Seed':
-            _0x57347f = 314;
-            break;
-          case "Tomato Seed":
-            _0x57347f = 316;
-            break;
-          case "Thornbush Seed":
-            _0x57347f = 295;
-            break;
-          case 'Garlic\x20Seed':
-            _0x57347f = 293;
-            break;
-          case "Watermelon Seed":
-            _0x57347f = 318;
-            break;
-          default:
-            _0x57347f = 0;
-            break;
-        }
-        switch (_0x73cd4e.tokenHolder.craftId) {
-          case "Golden Pitchfork":
-            _0x42a94b = 100;
-            break;
-          case "Bands":
-            _0x42a94b = 297;
-            break;
-          case "Dragon Arrows":
-            _0x42a94b = 189;
-            break;
-          case "Reidite Wall":
-            _0x42a94b = 327;
-            break;
-          case "Reidite Door":
-            _0x42a94b = 328;
-            break;
-          case "Reidite Spike":
-            _0x42a94b = 329;
-            break;
-          case "Reidite Spiked Door":
-            _0x42a94b = 330;
-            break;
-          case 'Bed':
-            _0x42a94b = 300;
-            break;
-          case "Bottle":
-            _0x42a94b = 218;
-            break;
-          default:
-            _0x42a94b = 0;
-            break;
-        }
-        switch (_0x73cd4e.tokenHolder.recycleId) {
-          case "Hood":
-            _0x343e44 = 156;
-            break;
-          case "Saddle":
-            _0x343e44 = 162;
-            break;
-          case 'Book':
-            _0x343e44 = 46;
-            break;
-          case "Plot":
-            _0x343e44 = 234;
-            break;
-          case 'WTT':
-            _0x343e44 = 228;
-            break;
-          case 'Bed':
-            _0x343e44 = 300;
-            break;
-          default:
-            _0x343e44 = 0;
-            break;
-        }
-        const _0x4e00c2 = {
-          'server': _0x3bc846,
-          'token': _0x1b5a90,
-          'tokenid': _0x3587ab,
-          'Settings': {
-            'BlueCrown': _0x73cd4e.tokenHolder.bluecrown,
-            'AutoFarm': {
-              'Enabled': _0x73cd4e.tokenHolder.autofarm,
-              'TLX': _0x73cd4e.AutoFarm.TLX,
-              'TLY': _0x73cd4e.AutoFarm.TLY,
-              'BRX': _0x73cd4e.AutoFarm.BRX,
-              'BRY': _0x73cd4e.AutoFarm.BRY,
-              'SX': _0x73cd4e.AutoFarm.SX,
-              'SY': _0x73cd4e.AutoFarm.SY
-            },
-            'Whitelist': _0x73cd4e.AutoFarm.whitelist.split('\x20') || [],
-            'AutoSeed': {
-              'Enabled': _0x73cd4e.tokenHolder.autoseed,
-              'seedToPlace': _0x57347f
-            },
-            'AutoCraftAndRecycle': {
-              'Enabled': _0x73cd4e.tokenHolder.autocraft || _0x73cd4e.tokenHolder.autorecycle,
-              'craftId': _0x42a94b,
-              'recycleId': _0x343e44,
-              'CraftEnabled': _0x73cd4e.tokenHolder.autocraft,
-              'RecycleEnabled': _0x73cd4e.tokenHolder.autorecycle
-            }
-          }
-        };
-        _0x509bba && _0x509bba.send(_0x5a1a84(JSON.stringify([5, _0x4e00c2])));
-      }
+     
       let _0x73cd4e = {
-        'darkMode': 0,
+        'darkMode': 1,
         'putToChest': 10,
         'pingDisplay': 0,
         'fpsDisplay': 1,
@@ -1132,13 +514,17 @@
           'active': 1,
           'opacity': 0.5
         },
+        'LockAngle': {
+          'active': 0,
+          'value': 0
+        },
         'Hidden': {
           'active': ![],
-          'bind': "Numpad6"
+          'bind': "Numpad4"
         },
         'AutoSteal': {
           'active': ![],
-          'bind': "NONE"
+          'bind': "KeyQ"
         },
         'AutoCraft': {
           'active': ![],
@@ -1150,15 +536,19 @@
         },
         'AutoExtTake': {
           'active': ![],
-          'bind': 'NONE'
+          'bind': 'KeyL'
         },
         'AutoBreadTake': {
           'active': ![],
-          'bind': "NONE"
+          'bind': "KeyB"
         },
-        'AutoBreadPut': {
+       'AutoBreadPut': {
           'active': ![],
           'bind': 'KeyI'
+        },
+        'SpamBuild': {
+          'active': ![],
+          'bind': 'NONE'
         },
         'AutoRecycle': {
           'active': ![],
@@ -1230,7 +620,7 @@
         },
         'AutoEmerald': {
           'active': ![],
-          'bind': "KeyM",
+          'bind': "NONE",
           'angle': 0
         },
         'AutoTame': {
@@ -1267,7 +657,7 @@
         },
         'PathFinder': {
           'active': ![],
-          'bind': 'KeyP',
+          'bind': 'NONE',
           'End': {
             'x': -1,
             'y': -1
@@ -1320,21 +710,26 @@
         },
         'showLeaderBoardLevels': 1,
         'increasedZoom': "Auto",
-        'tokenHolder': {
-          'autofarm': 0,
-          'autoseed': 0,
-          'autocraft': 0,
-          'autorecycle': 0,
-          'craftId': 0,
-          'recycleId': 0,
-          'seedToPlace': 0,
-          'bluecrown': 0
-        },
-        'Inventory': {
+        
+   'Inventory': {
           'myInv': false,
-          'teamInv': false
+          'teamInv': false,
+          'showHp': false,
+          'teamChat': true,
+          'chatSound': true,
+          'targetBind': 'KeyT',
+          'sosBind': 'F1',
+          'clearBind': 'KeyC'
+        },
+        'Macro': {
+            'record': 0,
+            'play': 0,
+            'addBind': 'KeyN', // [
+            'undoBind': 'KeyM',   // \
+            'playBind': 'NONE' // ]
         }
-};
+      };
+      window.arctConfig = _0x73cd4e; // Открываем доступ для других скриптов
       const _0x122c9c = {
         'darkMode': 0,
         'putToChest': 1,
@@ -1394,17 +789,19 @@
         ["AutoExtPut.active"]: 55,
         ['AutoExtPut.bind']: 56,
         ['AutoExtTake.active']: 0,
-        ["AutoExtTake.bind"]: 0,
-        ["AutoBreadTake.active"]: 59,
+        ["AutoExtTake.bind"]: 58,
+        ["AutoBreadTake.active"]: 0,
         ["AutoBreadTake.bind"]: 60,
         ['AutoBreadPut.active']: 61,
         ['AutoBreadPut.bind']: 62,
+        ["SpamBuild.active"]: 195,
+        ["SpamBuild.bind"]: 196,
         ["AutoRecycle.active"]: 63,
         ["AutoRecycle.bind"]: 64,
         ["SmartCraft.active"]: 65,
         ["SmartCraft.option"]: 66,
         ['SmartCraft.amount']: 67,
-        ["Xray.active"]: 68,
+        ["Xray.active"]: 0,
         ['Xray.opacity']: 69,
         ["Xray.bind"]: 70,
         ['AutoWall.active']: 71,
@@ -1434,7 +831,7 @@
         ["AutoBook.active"]: 95,
         ["ZmaAutoBottle.enabled"]: 96,
         ["ZmaAutoBottle.health"]: 97,
-        ["AutoEmerald.active"]: 98,
+        ["AutoEmerald.active"]: 0,
         ['AutoEmerald.bind']: 99,
         ["AutoEmerald.angle"]: 100,
         ['AutoTame.active']: 101,
@@ -1503,21 +900,71 @@
         ["market.diamond"]: 164,
         ["market.amethyst"]: 165,
         ["market.reidite"]: 166,
-        ["tokenHolder.autofarm"]: 167,
-        ["tokenHolder.autoseed"]: 168,
-        ["tokenHolder.autocraft"]: 169,
-        ["tokenHolder.autorecycle"]: 170,
-        ["tokenHolder.craftId"]: 171,
-        ["tokenHolder.recycleId"]: 172,
-        ["tokenHolder.seedToPlace"]: 173,
+       
         ["AutoFarm.whitelist"]: 174,
         ["SmartCraft.bind"]: 175,
-        ["tokenHolder.bluecrown"]: 176,
+       
         ["AutoFurnace.active"]: 177,
         ["AutoFurnace.bind"]: 178,
-        ["equipAfterPlace.active"]: 179,
-        'treasureChestOnTop': 180
+       "equipAfterPlace.active": 179,
+        'treasureChestOnTop': 180,
+        'Inventory.myInv': 181,
+        'Inventory.teamInv': 182,
+        'Inventory.showHp': 183,
+        'Inventory.teamChat': 184,
+        'Inventory.chatSound': 185,
+        'Inventory.targetBind': 186,
+        'Inventory.sosBind': 187,
+        'Inventory.clearBind': 188,
+        'Macro.record': 189,
+        'Macro.play': 190,
+        'Macro.recordBind': 191,
+        'Macro.playBind': 192,
+        'LockAngle.active': 193,
+        'LockAngle.value': 194
       };
+      // --- НОВАЯ СИСТЕМА СОХРАНЕНИЯ БИНДОВ ---
+      const _0xbindPaths = [
+        'Spectator.bind', 'DropSword.bind', 'Hidden.bind', 'AutoSteal.bind', 
+        'AutoCraft.bind', 'AutoExtPut.bind', 'AutoExtTake.bind', 'AutoBreadTake.bind', 
+        'AutoBreadPut.bind', 'AutoRecycle.bind', 'Xray.bind', 'AutoWall.bind', 
+        'AutoSpike.bind', 'AutoCrown.bind', 'AutoTotem.bind', 'AutoBuild.bind', 
+        'AutoFire.bind', 'Aimbot.bind', 'AutoEmerald.bind', 'AutoTame.bind', 
+        'AutoFarm.bind', 'PathFinder.bind', 'ZmaRedGold.bind', 'SmartCraft.bind', 
+        'AutoFurnace.bind', 'Inventory.targetBind', 'Inventory.sosBind', 'Inventory.clearBind',
+        'Macro.addBind', 'Macro.undoBind'
+      ];
+
+     // --- УНИВЕРСАЛЬНАЯ СИСТЕМА СОХРАНЕНИЯ ВСЕХ НАСТРОЕК И БИНДОВ ---
+      function _0xsaveAllSettings() {
+        try {
+          // Сохраняем весь конфиг целиком, включая все галочки, ползунки и бинды
+          localStorage.setItem('arct_all_settings_v2', JSON.stringify(_0x73cd4e));
+        } catch (e) {}
+      }
+
+      function _0xloadAllSettings() {
+        try {
+          const _0xrawSettings = localStorage.getItem('arct_all_settings_v2');
+          if (!_0xrawSettings) return;
+          const _0xparsed = JSON.parse(_0xrawSettings);
+          if (!_0xparsed || typeof _0xparsed !== 'object') return;
+          
+          // Рекурсивно переносим сохраненные значения в рабочий конфиг читов, не затирая структуру
+          function recursiveAssign(target, source) {
+            for (let key in source) {
+              if (source[key] !== null && typeof source[key] === 'object' && !Array.isArray(source[key])) {
+                if (!target[key]) target[key] = {};
+                recursiveAssign(target[key], source[key]);
+              } else {
+                target[key] = source[key];
+              }
+            }
+          }
+          recursiveAssign(_0x73cd4e, _0xparsed);
+        } catch (e) {}
+      }
+      
       function _0xd119fc(_0x5577d3, _0x661406 = [], _0x4a5c62 = []) {
         for (const _0xaa58e9 in _0x5577d3) {
           const _0x3aa9a6 = _0x5577d3[_0xaa58e9],
@@ -1578,13 +1025,16 @@
           constructor(_0x3dc7de) {
             this.guiConfig = _0x3dc7de, this.guiTitle = 0, this.container = 0, this.customiseButton = 0, this.mainContent = 0, this.header = 0, this.secondOverlay = 0, this.guiButton = 0, this.overlay = 0, this.subfolderLabel = [], this.checkBoxLabel = [], this.rangeWrapper = [], this.rangeLabel = [], this.range = [], this.rangeValueDisplay = [], this.bindWrapper = [], this.bindLabel = [], this.bindButton = [], this.selectWrapper = [], this.selectLabel = [], this.select = [], this.buttonWrapper = [], this.button = [], this.textWrapper = [], this.textLabel = [], this.textInput = [], this.folderButton = [], this.realIndex = [], this.previousFolderName = null, this.cachedSavedValues = _0x4886c3(_0x73cd4e);
           }
-          ["saveSettings"]() {
+         ["saveSettings"]() {
             const _0x3b9c88 = Date.now();
             _0x3b9c88 - _0x466018 < 100 && _0x524378 && clearTimeout(_0x524378), _0x466018 = _0x3b9c88, _0x524378 = _0x4cd684.setTimeout(() => {
               const _0x7fbb6f = _0x4886c3(_0x73cd4e);
               try {
                 localStorage.setItem('settings_all', JSON.stringify(_0x7fbb6f));
               } catch (_0x51463e) {}
+              
+              _0xsaveAllSettings(); // ТЕПЕРЬ СОХРАНЯЕТ ВСЁ В ЦЕЛОМ (ГАЛОЧКИ, ПИНГ, FPS, БИНДЫ)
+
               this.cachedSavedValues = _0x7fbb6f, this.updateGuiValues?.();
             }, 100);
           }
@@ -3664,6 +3114,13 @@
           if (_0x2eb52a && (_0x4e5e95.build || _0x4e5e95.build == 0) && typeof _0x35d4dc === "string" && JSON.parse(_0x35d4dc)[0] != _0x4e5e95.camera && JSON.parse(_0x35d4dc)[0] != _0x4e5e95.build) return _0x35c51b(_0x35d4dc);
           if (typeof _0x35d4dc === "string") {
             let _0x86e08e = JSON.parse(_0x35d4dc);
+            // --- ПЕРЕХВАТ ЛЮБОГО ПРЕДМЕТА ДЛЯ SPAM BUILD ---
+              if (Array.isArray(_0x86e08e) && _0x86e08e.length >= 2) {
+                  // Ловим пакет 25 (или динамический автобилд)
+                  if (_0x86e08e[0] === 25 || _0x86e08e[0] === _0x4e5e95.build || (_0x86e08e.length === 4 && _0x86e08e[3] === 0)) {
+                      window._arctLastBuildItem = _0x86e08e[1]; // Запоминаем ID ящика, печки и т.д.
+                  }
+              }
             if (!_0x2a8f98 && _0x86e08e[0] != _0x45020e.WTM.input.value) return;else _0x2a8f98 = !![];
             !_0x4e5e95.camera && _0x4e5e95.camera != 0 && _0x86e08e && _0x86e08e.length == 3 && (_0x4e5e95.camera = _0x86e08e[0]);
             if (!_0x4e5e95.build && _0x4e5e95.build != 0) {
@@ -3685,8 +3142,12 @@
                 _0x35c51b(JSON.stringify(_0x86e08e));
                 break;
               case _0x4e5e95.camera:
-                if (_0x53166f.websocket.readyState !== 1 || !_0x2eb52a) return;
                 !_0x4e5e95.build && _0x4e5e95.build != 0 && _0x53166f.WQP();
+                if (_0x40b9f1) {
+                    _0x86e08e[1] = Math.floor(-_0x3b2ae4.WUF.x + window.innerWidth / 2);
+                    _0x86e08e[2] = Math.floor(-_0x3b2ae4.WUF.y + window.innerHeight / 2);
+                    return _0x35c51b(JSON.stringify(_0x86e08e));
+                }
                 let _0xead30e = gameWorld.fast_units[_0x57f7e4.uid];
                 _0x73cd4e.increasedZoom = 'Off';
                 if (_0xead30e && _0xead30e.x && _0xead30e.y && !_0x5e7c97 && devicePixelRatio <= 0.6 && _0x73cd4e.increasedZoom == 'Auto') {
@@ -3880,126 +3341,302 @@
             
 _0x73cd4e.drawLeaderboardAllies && !_0x73cd4e.Hidden.active && _0x2641ab();
 
-// --- ARCT РАДАР РЕНДЕР ---
-if (window.arctAllies && !_0x73cd4e.Hidden.active && typeof gameWorld !== "undefined" && gameWorld.__NW__) {
-    _0x507512.save();
-    const _mTx = _0x46233c["WTI"]["translate"].x;
-    const _mTy = _0x46233c["WTI"]["translate"].y + (_0x3b2ae4["WUU"].WUW["length"] > 0 ? -120 : -50);
+/// -/// --- ARCT РАДАР РЕНДЕР ---
+if (!_0x73cd4e.Hidden.active && typeof gameWorld !== "undefined") {
     
-    for (let id in window.arctAllies) {
-        let p = window.arctAllies[id];
-        if (!p.x || !p.y) continue;
+    // --- 1. РАДАР (МИНИ-КАРТА) И МЕТКИ ---
+    if (window.arctAllies && gameWorld.__NW__) {
+        _0x507512.save();
+        const _mTx = _0x46233c["WTI"]["translate"].x;
+        const _mTy = _0x46233c["WTI"]["translate"].y + (_0x3b2ae4["WUU"].WUW["length"] > 0 ? -120 : -50);
         
-        let rx = _mTx + (p.x / (gameWorld.__NW__ * 100)) * 193;
-        let ry = _mTy + (p.y / (gameWorld.__NH__ * 100)) * 193;
-        
-        _0x507512.fillStyle = "#00FF00";
-        _0x507512.beginPath();
-        _0x507512.arc(rx, ry, 5, 0, Math.PI * 2);
-        _0x507512.fill();
-        _0x507512.lineWidth = 1;
-        _0x507512.strokeStyle = "#000000";
-        _0x507512.stroke();
+        // Отрисовка линий (Draw on Map)
+        if (window.arctLines) {
+            window.arctLines.forEach(l => {
+                let lx0 = _mTx + (l.x0 / (gameWorld.__NW__ * 100)) * 193;
+                let ly0 = _mTy + (l.y0 / (gameWorld.__NH__ * 100)) * 193;
+                let lx1 = _mTx + (l.x1 / (gameWorld.__NW__ * 100)) * 193;
+                let ly1 = _mTy + (l.y1 / (gameWorld.__NH__ * 100)) * 193;
 
-        if (p.name) {
-            _0x507512.font = "10px 'Baloo Paaji', sans-serif";
-            _0x507512.textAlign = "left";
-            _0x507512.textBaseline = "middle";
-            _0x507512.lineWidth = 2.5;
-            _0x507512.strokeStyle = "#000000";
-            _0x507512.fillStyle = "#FFFFFF";
-            _0x507512.strokeText(p.name, rx + 8, ry);
-            _0x507512.fillText(p.name, rx + 8, ry);
-        }
-    }
-    _0x507512.restore();
-}
-
-// --- ARCT ИНВЕНТАРЬ НАД ИГРОКАМИ (ЛОКАЛЬНЫЙ + СОЮЗНИКИ) ---
-if (!_0x73cd4e.Hidden.active) {
-    let targetsToDraw = [];
-
-    // 1. Добавляем себя (ТОЛЬКО ЕСЛИ ВКЛЮЧЕНО 'My Inventory')
-    if (_0x73cd4e.Inventory && _0x73cd4e.Inventory.myInv) {
-        let me = gameWorld?.fast_units?.[_0x57f7e4.uid];
-        if (me && _0x3b2ae4?.WUU?.WUV) {
-            targetsToDraw.push({
-                unit: me,
-                inv: _0x3b2ae4.WUU.WUV
+                _0x507512.strokeStyle = "rgba(0, 255, 204, 0.7)";
+                _0x507512.lineWidth = 2;
+                _0x507512.beginPath();
+                _0x507512.moveTo(lx0, ly0);
+                _0x507512.lineTo(lx1, ly1);
+                _0x507512.stroke();
             });
         }
+
+        // Рендер Союзников
+        for (let id in window.arctAllies) {
+            let p = window.arctAllies[id];
+            if (!p.x || !p.y) continue; 
+            
+            let rx = _mTx + (p.x / (gameWorld.__NW__ * 100)) * 193;
+            let ry = _mTy + (p.y / (gameWorld.__NH__ * 100)) * 193;
+            
+            _0x507512.fillStyle = "#00FF00";
+            _0x507512.beginPath();
+            _0x507512.arc(rx, ry, 5, 0, Math.PI * 2);
+            _0x507512.fill();
+            _0x507512.lineWidth = 1;
+            _0x507512.strokeStyle = "#000000";
+            _0x507512.stroke();
+
+            if (p.name) {
+                _0x507512.font = "10px 'Baloo Paaji', sans-serif";
+                _0x507512.textAlign = "left";
+                _0x507512.textBaseline = "middle";
+                _0x507512.lineWidth = 2.5;
+                _0x507512.strokeStyle = "#000000";
+                _0x507512.fillStyle = "#FFFFFF";
+                _0x507512.strokeText(p.name, rx + 8, ry);
+                _0x507512.fillText(p.name, rx + 8, ry);
+            }
+        }
+
+        // Рендер Меток
+        if (window.arctMarkers) {
+            window.arctMarkers.forEach(m => {
+                let rx = _mTx + (m.x / (gameWorld.__NW__ * 100)) * 193;
+                let ry = _mTy + (m.y / (gameWorld.__NH__ * 100)) * 193;
+
+                _0x507512.fillStyle = "#FF00FF";
+                _0x507512.beginPath();
+                _0x507512.arc(rx, ry, 4, 0, Math.PI * 2);
+                _0x507512.fill();
+                _0x507512.lineWidth = 1.5;
+                _0x507512.strokeStyle = "#FFFFFF";
+                _0x507512.stroke();
+
+                _0x507512.font = "bold 10px 'Baloo Paaji', sans-serif";
+                _0x507512.textAlign = "center";
+                _0x507512.lineWidth = 2.5;
+                _0x507512.strokeStyle = "#000000";
+                _0x507512.fillStyle = "#FF55FF";
+                _0x507512.strokeText(m.label, rx, ry - 8);
+                _0x507512.fillText(m.label, rx, ry - 8);
+            });
+        }
+        _0x507512.restore();
     }
 
-    // 2. Добавляем союзников (ЕСЛИ ВКЛЮЧЕНО 'Team Inventory')
-    if (_0x73cd4e.Inventory && _0x73cd4e.Inventory.teamInv && window.arctAllies) {
-        for (let id in window.arctAllies) {
-            // ПРОПУСКАЕМ СЕБЯ! (Чтобы 'Team Inv' не рисовал нас самих)
-            if (id == _0x57f7e4.uid) continue;
+    // --- 2. ВСТРОЕННЫЙ BOX INFO ESP ---
+    if (_0x73cd4e.boxInfo && gameWorld.units && _0x3b2ae4.WUF) {
+        _0x507512.save();
+        _0x507512.font = "bold 15px 'Baloo Paaji', Arial, sans-serif";
+        _0x507512.textAlign = "center";
+        _0x507512.lineWidth = 4;
+        _0x507512.strokeStyle = "#000000"; 
+        _0x507512.fillStyle = "#00FFFF";  
 
+        let camX = _0x3b2ae4.WUF.x;
+        let camY = _0x3b2ae4.WUF.y;
+
+        const updateBoxState = (entity, maxTime) => {
+            if (!entity._arctBoxInfo) entity._arctBoxInfo = { timeLeft: maxTime, lastUpdate: Date.now(), hits: 0, wasHitting: true };
+            let now = Date.now();
+            if (entity.action === 2 && entity._arctBoxInfo.wasHitting) {
+                entity._arctBoxInfo.wasHitting = false; entity._arctBoxInfo.hits++;
+            } else if (entity.action !== 2) {
+                entity._arctBoxInfo.wasHitting = true;
+            }
+            let delta = (now - entity._arctBoxInfo.lastUpdate) / 1000;
+            if (delta > 0 && maxTime > 0) {
+                entity._arctBoxInfo.timeLeft = Math.max(0, entity._arctBoxInfo.timeLeft - delta);
+                entity._arctBoxInfo.lastUpdate = now;
+            }
+            return entity._arctBoxInfo;
+        };
+
+        const drawEntities = (typeId, timeLimit, showTimeAndName, typeName) => {
+            let entities = gameWorld.units[typeId];
+            if (!entities) return;
+            for (let i = 0; i < entities.length; i++) {
+                let ent = entities[i];
+                if (!ent || ent.x === undefined || ent.y === undefined) continue;
+                let screenX = camX + ent.x;
+                let screenY = camY + ent.y - 25;
+                let state = updateBoxState(ent, timeLimit);
+                
+                let yOffset = screenY;
+                if (showTimeAndName) {
+                    _0x507512.strokeText(typeName, screenX, yOffset);
+                    _0x507512.fillText(typeName, screenX, yOffset);
+                    yOffset += 18;
+                    let timeStr = "Time: " + state.timeLeft.toFixed(1) + "s";
+                    _0x507512.strokeText(timeStr, screenX, yOffset);
+                    _0x507512.fillText(timeStr, screenX, yOffset);
+                    yOffset += 18;
+                } else {
+                    _0x507512.strokeText(typeName, screenX, yOffset);
+                    _0x507512.fillText(typeName, screenX, yOffset);
+                    yOffset += 18;
+                }
+                let hitsStr = "Hits: " + state.hits;
+                _0x507512.strokeText(hitsStr, screenX, yOffset);
+                _0x507512.fillText(hitsStr, screenX, yOffset);
+            }
+        };
+
+        drawEntities(103, 0, false, "Gift");
+        drawEntities(97, 0, false, "Treasure");
+        drawEntities(102, 16, true, "Drop"); // 16 сек
+        drawEntities(98, 240, true, "Dead"); // 240 сек
+
+        _0x507512.restore();
+    }
+
+    // --- 3. ИНВЕНТАРЬ ИГРОКОВ, HP, TARGET, SOS И НИКИ ---
+    let targetsToDraw = [];
+
+    if (_0x73cd4e.Inventory && _0x73cd4e.Inventory.myInv) {
+        let me = gameWorld?.fast_units?.[_0x57f7e4.uid];
+        if (me && _0x3b2ae4?.WUU?.WUV) targetsToDraw.push({ x: me.x, y: me.y, inv: _0x3b2ae4.WUU.WUV });
+    }
+
+    if (window.arctTarget && window.arctTarget.exp > Date.now() && _0x3b2ae4.WUF) {
+        let players = gameWorld.units[0]; 
+        let targetEnemy = null;
+        let pidKey = _0x57f7e4?.pid || "playerId";
+        if (players) {
+            for (let i = 0; i < players.length; i++) {
+                if (players[i][pidKey] === window.arctTarget.uid) { targetEnemy = players[i]; break; }
+            }
+        }
+        if (targetEnemy && typeof targetEnemy.x === 'number') {
+            let sx = _0x3b2ae4.WUF.x + targetEnemy.x;
+            let sy = _0x3b2ae4.WUF.y + targetEnemy.y;
+            _0x507512.save();
+            _0x507512.strokeStyle = "rgba(255, 0, 0, 0.8)";
+            _0x507512.lineWidth = 4;
+            _0x507512.beginPath();
+            _0x507512.arc(sx, sy, 50, 0, Math.PI * 2);
+            _0x507512.moveTo(sx - 65, sy); _0x507512.lineTo(sx + 65, sy);
+            _0x507512.moveTo(sx, sy - 65); _0x507512.lineTo(sx, sy + 65);
+            _0x507512.stroke();
+            _0x507512.fillStyle = "red";
+            _0x507512.font = "bold 14px 'Baloo Paaji'";
+            _0x507512.textAlign = "center";
+            _0x507512.fillText("TARGET", sx, sy - 60);
+            _0x507512.restore();
+        }
+    }
+
+    if (window.arctAllies) {
+        let pidKey = _0x57f7e4?.pid || "playerId";
+        for (let id in window.arctAllies) {
             let ally = window.arctAllies[id];
-            let allyUnit = gameWorld?.fast_units?.[id];
+            if (!ally || ally.uid === undefined) continue;
+
+            // --- НАТИВНЫЙ РЕНДЕР ИМЕНИ ХОСТИНГА В ИГРЕ ---
+            if (ally.ownerName && gameWorld.WTN) {
+                let playerUnit = gameWorld.fast_units[ally.uid];
+                if (playerUnit && playerUnit[pidKey] !== undefined) {
+                    let pid = playerUnit[pidKey];
+                    let wtnPlayer = gameWorld.WTN[pid];
+                    
+                    if (wtnPlayer && typeof wtnPlayer.nickname === 'string') {
+                        let suffix = ` (${ally.ownerName})`;
+                        if (!wtnPlayer.nickname.includes(suffix)) {
+                            // Если уже была приписка, убираем её
+                            wtnPlayer.nickname = wtnPlayer.nickname.replace(/ \([^)]+\)$/, ""); 
+                            // Добавляем ник с хостинга
+                            wtnPlayer.nickname += suffix;
+                            // Сбрасываем кэш текста, чтобы игра его перерисовала
+                            wtnPlayer.label = null; 
+                            wtnPlayer.label_winter = null;
+                            wtnPlayer.ldb_label = null;
+                        }
+                    }
+                }
+            }
+
+            // Пропускаем свой собственный инвентарь и хп (он уже добавлен выше)
+            if (ally.uid === _0x57f7e4.uid) continue;
             
-            if (allyUnit && ally.inv) {
-                targetsToDraw.push({
-                    unit: allyUnit,
-                    inv: ally.inv
-                });
+            if (typeof ally.x === 'number' && typeof ally.y === 'number' && _0x3b2ae4.WUF) {
+                let sx = _0x3b2ae4.WUF.x + ally.x;
+                let sy = _0x3b2ae4.WUF.y + ally.y;
+                
+                let isInvDrawn = false;
+                if (_0x73cd4e.Inventory && _0x73cd4e.Inventory.teamInv && ally.inv) {
+                    isInvDrawn = true;
+                    targetsToDraw.push({ x: ally.x, y: ally.y, inv: ally.inv });
+                }
+
+                if (_0x73cd4e.Inventory && _0x73cd4e.Inventory.showHp && ally.hp !== undefined) {
+                    let hpOffsetY = isInvDrawn ? sy - 145 : sy + 45; 
+                    _0x507512.save();
+                    _0x507512.fillStyle = "#000000";
+                    _0x507512.fillRect(sx - 25, hpOffsetY, 50, 10);
+                    _0x507512.fillStyle = ally.hp > 50 ? "#00FF00" : (ally.hp > 25 ? "#FFFF00" : "#FF0000");
+                    _0x507512.fillRect(sx - 24, hpOffsetY + 1, 48 * (ally.hp / 100), 8);
+                    _0x507512.font = "bold 10px 'Baloo Paaji'";
+                    _0x507512.fillStyle = "#FFFFFF";
+                    _0x507512.textAlign = "center";
+                    _0x507512.fillText(ally.hp + "%", sx, hpOffsetY + 9);
+                    _0x507512.restore();
+                }
+
+                if (ally.sos > Date.now()) {
+                    _0x507512.save();
+                    _0x507512.globalAlpha = Math.abs(Math.sin(Date.now() / 150)); 
+                    _0x507512.beginPath();
+                    _0x507512.arc(sx, sy, 70, 0, Math.PI * 2);
+                    _0x507512.lineWidth = 6;
+                    _0x507512.strokeStyle = "red";
+                    _0x507512.stroke();
+                    _0x507512.fillStyle = "red";
+                    _0x507512.font = "bold 20px 'Baloo Paaji'";
+                    _0x507512.textAlign = "center";
+                    _0x507512.fillText("ПОМОЩЬ [" + ally.name + "]", sx, sy - 90);
+                    _0x507512.restore();
+                }
             }
         }
     }
 
-    // 3. Рисуем инвентарь для всех собранных игроков
     if (targetsToDraw.length > 0 && _0x3b2ae4.WUF) {
         _0x507512.save();
-
+        let _0x46233c_ref = window.v2601;
         targetsToDraw.forEach(target => {
-            let screenX = _0x3b2ae4.WUF.x + target.unit.x;
-            let screenY = _0x3b2ae4.WUF.y + target.unit.y - 130; 
-
+            let screenX = _0x3b2ae4.WUF.x + target.x;
+            let screenY = _0x3b2ae4.WUF.y + target.y - 130; 
             let items = [];
             try {
                 let wuv = target.inv; 
                 for (let key in wuv) {
                     let item = wuv[key];
                     if (!item) continue;
-                    
                     let count = typeof item === 'number' ? item : (item.n ?? item.count ?? 1);
                     if (count <= 0) continue;
-
                     let realId = (typeof item === 'object' && item.id !== undefined) ? item.id : parseInt(key);
                     if (isNaN(realId)) continue;
-                    
                     let imgObj = null;
-
-                    // Ищем в панели UI
-                    if (_0x46233c?.WTJ?.items) {
-                        let uiItems = _0x46233c.WTJ.items;
-                        let foundUI = Array.isArray(uiItems) 
-                            ? uiItems.find(u => u && u.id === realId) 
-                            : Object.values(uiItems).find(u => u && u.id === realId);
-                            
-                        if (foundUI && foundUI.img && foundUI.img.src) {
-                            imgObj = foundUI.img;
-                        }
+                    if (_0x46233c_ref?.WTJ?.items) {
+                        let uiItems = _0x46233c_ref.WTJ.items;
+                        let foundUI = Array.isArray(uiItems) ? uiItems.find(u => u && u.id === realId) : Object.values(uiItems).find(u => u && u.id === realId);
+                        if (foundUI && foundUI.img && foundUI.img.src) imgObj = foundUI.img;
                     }
-
-                    // Ищем в базе игры (WTF)
-                    if (!imgObj && _0x46233c?.WTF) {
-                        let wtfItem = _0x46233c.WTF.find(w => w && (w.id === realId || w.type === realId)) 
-                                    || _0x46233c.WTF[realId] 
-                                    || _0x46233c.WTF[realId / 2 - 1];
-
-                        if (wtfItem && wtfItem.info && wtfItem.info[_0x57f7e4.img]) {
-                            let rawImg = wtfItem.info[_0x57f7e4.img][0];
-                            if (rawImg) {
-                                if (rawImg.src) {
-                                    imgObj = rawImg;
-                                } else if (rawImg[_0x57f7e4.src]) {
-                                    let cachedImg = new Image();
-                                    cachedImg.src = rawImg[_0x57f7e4.src];
-                                    wtfItem.info[_0x57f7e4.img][0] = cachedImg;
-                                    imgObj = cachedImg;
+                    if (!imgObj && _0x46233c_ref?.WTF) {
+                        let wtfItem = _0x46233c_ref.WTF.find(w => w && (w.id === realId || w.type === realId)) || _0x46233c_ref.WTF[realId] || _0x46233c_ref.WTF[realId / 2 - 1];
+                        if (wtfItem && wtfItem.info) {
+                            for (let k in wtfItem.info) {
+                                let arr = wtfItem.info[k];
+                                if (Array.isArray(arr) && arr[0]) {
+                                    let rawImg = arr[0];
+                                    if (rawImg instanceof HTMLImageElement || rawImg.src) { imgObj = rawImg; break; } 
+                                    else if (typeof rawImg === 'object') {
+                                        for (let prop in rawImg) {
+                                            if (typeof rawImg[prop] === 'string' && (rawImg[prop].startsWith('data:image') || rawImg[prop].includes('.png'))) {
+                                                let cachedImg = new Image(); cachedImg.src = rawImg[prop];
+                                                arr[0] = cachedImg; imgObj = cachedImg; break;
+                                            }
+                                        }
+                                    }
                                 }
+                                if (imgObj) break;
                             }
                         }
                     }
@@ -4007,44 +3644,27 @@ if (!_0x73cd4e.Hidden.active) {
                 }
             } catch(e) {}
 
-            // Рисуем ячейки
             if (items.length > 0) {
                 let size = 28, gap = 4, totalW = items.length * (size + gap) - gap;
                 let startX = screenX - totalW / 2;
-
                 items.forEach((itm, i) => {
                     let ix = startX + i * (size + gap), iy = screenY;
-
-                    _0x507512.fillStyle = "#123b42";
-                    _0x507512.strokeStyle = "#0b262b";
-                    _0x507512.lineWidth = 2;
-                    _0x507512.fillRect(ix, iy, size, size);
-                    _0x507512.strokeRect(ix, iy, size, size);
-
+                    _0x507512.fillStyle = "#123b42"; _0x507512.strokeStyle = "#0b262b"; _0x507512.lineWidth = 2;
+                    _0x507512.fillRect(ix, iy, size, size); _0x507512.strokeRect(ix, iy, size, size);
                     if (itm.img) {
                         try {
-                            if (typeof _0x373076 === 'function') {
-                                _0x373076(_0x507512, itm.img, ix + 3, iy + 3, size - 6, size - 6);
-                            } else {
-                                _0x507512.drawImage(itm.img, ix + 3, iy + 3, size - 6, size - 6);
-                            }
+                            if (typeof window._0x373076 === 'function') window._0x373076(_0x507512, itm.img, ix + 3, iy + 3, size - 6, size - 6);
+                            else _0x507512.drawImage(itm.img, ix + 3, iy + 3, size - 6, size - 6);
                         } catch(e) {}
                     }
-
                     if (itm.count > 1) {
-                        _0x507512.font = "bold 9px 'Baloo Paaji', sans-serif";
-                        _0x507512.textAlign = "right";
-                        _0x507512.textBaseline = "bottom";
-                        _0x507512.lineWidth = 2.5;
-                        _0x507512.strokeStyle = "#000000";
-                        _0x507512.fillStyle = "#FFFFFF";
-                        _0x507512.strokeText("x" + itm.count, ix + size - 2, iy + size - 1);
-                        _0x507512.fillText("x" + itm.count, ix + size - 2, iy + size - 1);
+                        _0x507512.font = "bold 9px 'Baloo Paaji'"; _0x507512.textAlign = "right"; _0x507512.textBaseline = "bottom";
+                        _0x507512.lineWidth = 2.5; _0x507512.strokeStyle = "#000000"; _0x507512.fillStyle = "#FFFFFF";
+                        _0x507512.strokeText("x" + itm.count, ix + size - 2, iy + size - 1); _0x507512.fillText("x" + itm.count, ix + size - 2, iy + size - 1);
                     }
                 });
             }
         });
-        
         _0x507512.restore();
     }
 }
@@ -4258,8 +3878,9 @@ if (!_0x73cd4e.Hidden.active) {
               if (!_0x41d03a) return _0x56c719(_0x5d7a7e);
             }
           };
-          let _0x29aae2 = _0x53166f.WSJ.bind(_0x36ff7a);
+         let _0x29aae2 = _0x53166f.WSJ.bind(_0x36ff7a);
           _0x53166f.WSJ = function (_0x268fa8, _0x4f21d4, _0x1e965a, _0x13d242, _0x51de32, _0x58819a, _0x5b8ec6) {
+            window.arctMyHP = _0x268fa8; // Сохраняем чистое HP в глобальную переменную
             (_0x3b2ae4.WSJ.WUO - _0x4f21d4 / 100).toFixed(2) == 0.01 ? _0x51a8b0 = 1 : _0x51a8b0 = 0, _0x169d08 = document.defaultView.Date.now(), !_0x2b2f75 ? _0x2b2f75 = !![] : _0x2b2f75 = ![], _0x29aae2(_0x268fa8, _0x4f21d4, _0x1e965a, _0x13d242, _0x51de32, _0x58819a, _0x5b8ec6);
           };
           let _0x5ebee0 = _0x53166f.WSL.bind(_0x36ff7a);
@@ -4655,7 +4276,14 @@ if (!_0x73cd4e.Hidden.active) {
           let _0x4c6100 = _0x3b2ae4.WUL.WUG.bind(_0x3b2ae4.WUL);
           _0x3b2ae4.WUL.WUG = function () {
             _0x4c6100();
-            if (_0x73cd4e.Aimbot.active && _0x73cd4e.Aimbot.angle) {
+            if (_0x73cd4e.LockAngle && _0x73cd4e.LockAngle.active) {
+              let _0x3a869e = gameWorld.fast_units[_0x57f7e4.uid];
+              if (_0x3a869e) {
+                let lockedRad = (_0x73cd4e.LockAngle.value / 255) * (Math.PI * 2);
+                _0x3a869e.angle = lockedRad;
+                _0x3a869e[_0x57f7e4.nangle] = lockedRad;
+              }
+            } else if (_0x73cd4e.Aimbot.active && _0x73cd4e.Aimbot.angle) {
               let _0x3a869e = gameWorld.fast_units[_0x57f7e4.uid];
               _0x3a869e && (_0x3a869e.angle = _0x73cd4e.Aimbot.angle, _0x3a869e[_0x57f7e4.nangle] = _0x73cd4e.Aimbot.angle);
             } else {
@@ -4805,7 +4433,13 @@ if (!_0x73cd4e.Hidden.active) {
           'width': 880,
           'height': 630,
           'folders': {
-            'Visuals': [{
+           'Visuals': [{
+              'type': 'checkbox',
+              'label': 'BoxInfo',
+              'object': _0x73cd4e,
+              'property': "boxInfo",
+              'onChange': val => { _0xa896c1.saveSettings(); }
+            }, {
               'type': 'checkbox',
               'label': 'Fps',
               'object': _0x73cd4e,
@@ -5072,6 +4706,43 @@ if (!_0x73cd4e.Hidden.active) {
                 const _0xf99e97 = document.getElementById("game_canvas");
                 _0xf99e97.style.filter = "brightness(" + _0x73cd4e.canvasBrightness + ')';
               }
+            }],
+            'Main': [{
+              'type': 'checkbox',
+              'label': "Auto Steal",
+              'object': _0x73cd4e.AutoSteal,
+              'property': "active",
+              'onChange': val => { _0xa896c1.saveSettings(); }
+            }, {
+              'type': 'bind',
+              'label': "Auto Steal Key:",
+              'buttonTextObject': _0x73cd4e.AutoSteal,
+              'buttonTextProperty': "bind",
+              'onChange': val => { _0xa896c1.saveSettings(); }
+            }, {
+              'type': 'checkbox',
+              'label': "Ext Take",
+              'object': _0x73cd4e.AutoExtTake,
+              'property': "active",
+              'onChange': val => { _0xa896c1.saveSettings(); }
+            }, {
+              'type': 'bind',
+              'label': "Ext Take Key:",
+              'buttonTextObject': _0x73cd4e.AutoExtTake,
+              'buttonTextProperty': "bind",
+              'onChange': val => { _0xa896c1.saveSettings(); }
+            }, {
+              'type': 'checkbox',
+              'label': "Bread Take",
+              'object': _0x73cd4e.AutoBreadTake,
+              'property': "active",
+              'onChange': val => { _0xa896c1.saveSettings(); }
+            }, {
+              'type': 'bind',
+              'label': "Bread Take Key:",
+              'buttonTextObject': _0x73cd4e.AutoBreadTake,
+              'buttonTextProperty': "bind",
+              'onChange': val => { _0xa896c1.saveSettings(); }
             }],
             'Tracers': [{
               'type': 'subfolder',
@@ -5419,6 +5090,14 @@ if (!_0x73cd4e.Hidden.active) {
                 _0xa896c1.saveSettings();
               }
             }, {
+              'type': "checkbox",
+              'label': "Spam Build",
+              'object': _0x73cd4e.SpamBuild,
+              'property': "active",
+              'onChange': val => {
+                _0xa896c1.saveSettings();
+              }
+            }, {
               'type': "subfolder",
               'label': "Aimbot Settings",
               'subfolder': [{
@@ -5458,15 +5137,23 @@ if (!_0x73cd4e.Hidden.active) {
                   _0xa896c1.saveSettings();
                 }
               }]
-            }, {
+          }, {
               'type': 'subfolder',
-              'label': 'Auto\x20Build\x20Settings',
+              'label': 'Auto Build Settings',
               'subfolder': [{
                 'type': "checkbox",
                 'label': "Auto Build",
                 'object': _0x73cd4e.AutoBuild,
                 'property': "active",
                 'onChange': _0xc519b9 => {
+                  _0xa896c1.saveSettings();
+                }
+              }, {
+                'type': "checkbox",
+                'label': "Auto Mode",
+                'object': _0x73cd4e.AutoBuild,
+                'property': "autoMode", // Новое свойство для переключения умного режима
+                'onChange': _0xnewval => {
                   _0xa896c1.saveSettings();
                 }
               }, {
@@ -5511,6 +5198,25 @@ if (!_0x73cd4e.Hidden.active) {
               'object': _0x73cd4e,
               'property': "putToChest",
               'onChange': _0x55104d => {
+                _0xa896c1.saveSettings();
+              }
+            }, {
+              'type': 'checkbox',
+              'label': "Lock Angle",
+              'object': _0x73cd4e.LockAngle,
+              'property': "active",
+              'onChange': _0xval => {
+                _0xa896c1.saveSettings();
+              }
+            }, {
+              'type': 'range',
+              'label': "Lock Angle Value",
+              'min': 0,
+              'max': 254,
+              'step': 1,
+              'object': _0x73cd4e.LockAngle,
+              'property': "value",
+              'onChange': _0xval => {
                 _0xa896c1.saveSettings();
               }
             }],
@@ -5580,7 +5286,8 @@ if (!_0x73cd4e.Hidden.active) {
                 'subOption': !![],
                 'object': _0x73cd4e.SmartCraft,
                 'property': "option",
-                'options': ["Reidite Spike Doors", "Amethyst Spike Doors", "Reidite Walls", "Reidite Spikes", "Amethyst Spikes", "Diamond Spikes", 'Gold\x20Spikes', "Reidite Swords", "Reidite Spears", 'Reidite\x20Helmets', "Reidite Shields"],
+                'options': ["Reidite Spike Doors", "Amethyst Spike Doors", "Reidite Walls", "Reidite Spikes", "Amethyst Spikes", "Diamond Spikes", 'Gold\x20Spikes', "Reidite Swords", "Reidite Spears", 'Reidite\x20Helmets', "Reidite Shields", "Golden Fork"],
+                
                 'onChange': _0x2b84b8 => {
                   _0xa896c1.saveSettings(), _0x3effc6 = -1;
                 }
@@ -5673,15 +5380,7 @@ if (!_0x73cd4e.Hidden.active) {
                 'onChange': _0x13512b => {
                   _0xa896c1.saveSettings();
                 }
-              }, {
-                'type': 'text',
-                'label': 'Allowed Players (IDs)',
-                'object': _0x73cd4e.AutoFarm,
-                'property': 'whitelist',
-                'onChange': val => {
-                  _0xa896c1.saveSettings();
-                }
-              }, {
+              },{
                 'type': 'button',
                 'label': 'Top\x20left\x20of\x20farm',
                 'action': _0x1d3881 => {
@@ -5703,42 +5402,76 @@ if (!_0x73cd4e.Hidden.active) {
                   _0x102fde && (_0x73cd4e.AutoFarm.SX = _0x102fde.x, _0x73cd4e.AutoFarm.SY = _0x102fde.y), _0xa896c1.saveSettings();
                 }
               }]
+            }],
+          'Macros': [{
+                'type': 'checkbox',
+                'label': 'Enable Path Play',
+                'object': _0x73cd4e.Macro,
+                'property': 'play',
+                'onChange': val => { _0xa896c1.saveSettings(); }
             }, {
-              'type': 'button',
-              'label': 'drop b (Berries)',
-              'action': () => {} // Нічого не робить, змінити не можна
+                'type': 'bind',
+                'label': 'Add Point Bind:',
+                'buttonTextObject': _0x73cd4e.Macro,
+                'buttonTextProperty': 'addBind',
+                'onChange': val => { _0xa896c1.saveSettings(); }
             }, {
-              'type': 'button',
-              'label': 'drop w (Wheat)',
-              'action': () => {}
+                'type': 'bind',
+                'label': 'Undo Point Bind:',
+                'buttonTextObject': _0x73cd4e.Macro,
+                'buttonTextProperty': 'undoBind',
+                'onChange': val => { _0xa896c1.saveSettings(); }
+            }],
+            'Pathfind': [{
+              'type': "checkbox",
+              'label': "Enable PathFinder(sf)",
+              'object': _0x73cd4e.PathFinder,
+              'property': "active",
+              'onChange': _0xval => {
+                _0xa896c1.saveSettings();
+              }
             }, {
-              'type': 'button',
-              'label': 'drop p (Pumpkin)',
-              'action': () => {}
+              'type': "bind",
+              'label': "Pathfinder Bind:",
+              'buttonTextObject': _0x73cd4e.PathFinder,
+              'buttonTextProperty': "bind",
+              'onChange': _0xval => {
+                _0xa896c1.saveSettings();
+              }
             }, {
-              'type': 'button',
-              'label': 'drop c (Carrot)',
-              'action': () => {}
+              'type': "button",
+              'label': "Set Current Position",
+              'action': () => {
+                let _0xworld = window.v2603 || gameWorld;
+                let _0xkeys = window.v2605 || _0x57f7e4;
+                if (_0xworld && _0xkeys && _0xworld.fast_units) {
+                    let _0xme = _0xworld.fast_units[_0xkeys.uid];
+                    if (_0xme) {
+                       _0x73cd4e.PathFinder.End.x = Math.round(_0xme.x / 100);
+                      _0x73cd4e.PathFinder.End.y = Math.round(_0xme.y / 100);
+                        _0xa896c1.saveSettings();
+                        _0xa896c1.updateGuiValues(); // Мгновенно обновляем цифры в меню
+                    }
+                }
+              }
             }, {
-              'type': 'button',
-              'label': 'drop to (Tomato)',
-              'action': () => {}
+              'type': "text",
+              'label': "Target X",
+              'object': _0x73cd4e.PathFinder.End,
+              'property': "x",
+              'onChange': _0xval => {
+                _0x73cd4e.PathFinder.End.x = Number(_0xval);
+                _0xa896c1.saveSettings();
+              }
             }, {
-              'type': 'button',
-              'label': 'drop th (Thornbush)',
-              'action': () => {}
-            }, {
-              'type': 'button',
-              'label': 'drop g (Garlic)',
-              'action': () => {}
-            }, {
-              'type': 'button',
-              'label': 'drop wm (Watermelon)',
-              'action': () => {}
-            }, {
-              'type': 'button',
-              'label': 'drop all',
-              'action': () => {}
+              'type': "text",
+              'label': "Target Y",
+              'object': _0x73cd4e.PathFinder.End,
+              'property': "y",
+              'onChange': _0xval => {
+                _0x73cd4e.PathFinder.End.y = Number(_0xval);
+                _0xa896c1.saveSettings();
+              }
             }],
             'Binds': [{
               'type': "bind",
@@ -5820,7 +5553,7 @@ if (!_0x73cd4e.Hidden.active) {
               'onChange': _0x29f6c4 => {
                 _0xa896c1.saveSettings();
               }
-            }, {
+           }, {
               'type': "bind",
               'label': "Bread Put Key:",
               'buttonTextObject': _0x73cd4e.AutoBreadPut,
@@ -5830,10 +5563,10 @@ if (!_0x73cd4e.Hidden.active) {
               }
             }, {
               'type': "bind",
-              'label': 'AutoEmerald\x20Key:',
-              'buttonTextObject': _0x73cd4e.AutoEmerald,
-              'buttonTextProperty': 'bind',
-              'onChange': _0x2f41e3 => {
+              'label': "Spam Build Key:",
+              'buttonTextObject': _0x73cd4e.SpamBuild,
+              'buttonTextProperty': "bind",
+              'onChange': val => {
                 _0xa896c1.saveSettings();
               }
             }, {
@@ -5892,23 +5625,55 @@ if (!_0x73cd4e.Hidden.active) {
               }
             }],
             
-            'Inventory': [{
-        'type': 'checkbox',
-        'label': 'My Inventory',
-        'object': _0x73cd4e.Inventory,
-        'property': 'myInv',
-        'onChange': val => {
-          _0xa896c1.saveSettings();
-        }
-      }, {
-        'type': 'checkbox',
-        'label': 'Team Inventory',
-        'object': _0x73cd4e.Inventory,
-        'property': 'teamInv',
-        'onChange': val => {
-          _0xa896c1.saveSettings();
-        }
-      }],
+       'Inventory': [{
+              'type': 'checkbox',
+              'label': 'My Inventory',
+              'object': _0x73cd4e.Inventory,
+              'property': 'myInv',
+              'onChange': val => { _0xa896c1.saveSettings(); }
+            }, {
+              'type': 'checkbox',
+              'label': 'Team Inventory',
+              'object': _0x73cd4e.Inventory,
+              'property': 'teamInv',
+              'onChange': val => { _0xa896c1.saveSettings(); }
+            }, {
+              'type': 'checkbox',
+              'label': 'Show Allies HP',
+              'object': _0x73cd4e.Inventory,
+              'property': 'showHp',
+              'onChange': val => { _0xa896c1.saveSettings(); }
+            }, {
+              'type': 'checkbox',
+              'label': 'Team Chat (/t)',
+              'object': _0x73cd4e.Inventory,
+              'property': 'teamChat',
+              'onChange': val => { _0xa896c1.saveSettings(); }
+            }, {
+              'type': 'checkbox',
+              'label': 'Chat Sound Effect',
+              'object': _0x73cd4e.Inventory,
+              'property': 'chatSound',
+              'onChange': val => { _0xa896c1.saveSettings(); }
+            }, {
+              'type': 'bind',
+              'label': 'Target Bind:',
+              'buttonTextObject': _0x73cd4e.Inventory,
+              'buttonTextProperty': 'targetBind',
+              'onChange': val => { _0xa896c1.saveSettings(); }
+            }, {
+              'type': 'bind',
+              'label': 'SOS Bind:',
+              'buttonTextObject': _0x73cd4e.Inventory,
+              'buttonTextProperty': 'sosBind',
+              'onChange': val => { _0xa896c1.saveSettings(); }
+            }, {
+              'type': 'bind',
+              'label': 'Clear Draw Bind:',
+              'buttonTextObject': _0x73cd4e.Inventory,
+              'buttonTextProperty': 'clearBind',
+              'onChange': val => { _0xa896c1.saveSettings(); }
+            }],
             'Skin\x20Changer': [{
               'type': 'subfolder',
               'label': 'Skin',
@@ -6200,20 +5965,25 @@ if (!_0x73cd4e.Hidden.active) {
         const _0x2fa324 = localStorage.getItem("guiSettings");
         _0xbf4bc9 = _0x2fa324 ? JSON.parse(_0x2fa324) : null;
         Array.isArray(_0xbf4bc9) && _0xbf4bc9.length && (_0x451f8b.align = _0xbf4bc9[0], _0x451f8b.toggleGuiKey = _0xbf4bc9[1], _0x451f8b.toggleGuiButton = _0xbf4bc9[2], _0x451f8b.draggable = _0xbf4bc9[3], _0x451f8b.fontSize = _0xbf4bc9[4], _0x451f8b.opacity = _0xbf4bc9[5], _0x451f8b.width = _0xbf4bc9[6], _0x451f8b.height = _0xbf4bc9[7]);
-        async function _0x40e97d(_0xae0415) {
+       async function _0x40e97d(_0xae0415) {
+          _0xloadAllSettings(); // ЗАГРУЖАЕМ ВСЕ НАСТРОЙКИ И БИНДЫ ПРИ СТАРТЕ
+
           if (!_0xae0415 || !_0xae0415.length) try {
             const _0x2f13c2 = localStorage.getItem('settings_all');
             _0x2f13c2 ? _0xae0415 = JSON.parse(_0x2f13c2) : _0xae0415 = [];
           } catch (_0x192834) {
             console.context().log("Failed to parse settings_all", _0x192834), _0xae0415 = [];
           }
+          // ... (дальше код идет без изменений)
+
+          _0xloadBinds(); // ПОДГРУЖАЕМ БИНДЫ ПРИ СТАРТЕ
+
           const _0x20e900 = _0xd119fc(_0x73cd4e),
             _0x349bed = _0x20e900.filter(_0x1724ad => !(_0x1724ad in _0x122c9c)),
             _0x1c4986 = Object.keys(_0x122c9c).filter(_0x51ef68 => !_0x20e900.includes(_0x51ef68));
-          if (_0x349bed.length || _0x1c4986.length) {
-            _0x2dad3 ? (console.context().log("Missing from map:", _0x349bed), console.context().log("Extra in map:", _0x1c4986), alert("[SettingsIDS]: Missing SettingsIDS For Some Settings (Check Console)")) : alert("[SETTINGS]: Failed To Load");
-            return;
-          }
+         if (_0x349bed.length || _0x1c4986.length) {
+    return;
+}
           _0xae0415.length ? _0xae0415.forEach(([_0x388568, _0x30f088]) => {
             _0x5cf49a[_0x388568] && _0x5cf49a[_0x388568].set(_0x30f088);
           }) : _0xa896c1.saveSettings();
@@ -6472,46 +6242,105 @@ if (_0x73cd4e.smoothRoofs || _0x73cd4e.Roof.active) {
             console.context().log('Failed\x20To\x20Draw\x20Emerald\x20Machine\x20Info', _0x23a0b4);
           }
         }
-        if (_0x73cd4e.chestInfo.active) for (let _0x3b154b = 0; gameWorld.units[EntityIDs.CHEST].length > _0x3b154b; _0x3b154b++) {
-          let _0x1217a2 = gameWorld.units[EntityIDs.CHEST][_0x3b154b];
-          if (!_0x1217a2.checked) {
-            !_0x439412.drawChest && (_0x439412.drawChest = _0x1217a2[_0x57f7e4.draw]);
-            try {
-              _0x1217a2[_0x57f7e4.draw] = function () {
-                if (_0x73cd4e.chestInfo.active && !_0x73cd4e.Hidden.active) return;else return _0x439412.drawChest.call(this);
-              }, _0x1217a2.checked = !![];
-            } catch (_0x1b3e9c) {
-              console.context().log("Failed To Bind Chest Drawing", _0x1b3e9c);
+       if (_0x73cd4e.chestInfo.active) {
+            for (let _0x3b154b = 0; gameWorld.units[EntityIDs.CHEST].length > _0x3b154b; _0x3b154b++) {
+                let _0x1217a2 = gameWorld.units[EntityIDs.CHEST][_0x3b154b];
+                
+                if (!_0x1217a2.checked) {
+                    !_0x439412.drawChest && (_0x439412.drawChest = _0x1217a2[_0x57f7e4.draw]);
+                    try {
+                        _0x1217a2[_0x57f7e4.draw] = function () {
+                            if (_0x73cd4e.chestInfo.active && !_0x73cd4e.Hidden.active) return;
+                            else return _0x439412.drawChest.call(this);
+                        };
+                        _0x1217a2.checked = !![];
+                    } catch (_0x1b3e9c) {
+                        console.context().log("Failed To Bind Chest Drawing", _0x1b3e9c);
+                    }
+                }
+                
+                try {
+                    if (_0x73cd4e.chestInfo.active) {
+                        _0x507512.save();
+                        _0x507512.translate(_0x3b2ae4.WUF.x + _0x1217a2.x, _0x3b2ae4.WUF.y + _0x1217a2.y);
+                        _0x507512.rotate(_0x1217a2.angle);
+                        
+                        let _0x30d31a = 0, _0x390660 = 0;
+                        
+                        if (_0x1217a2[_0x57f7e4.hit][_0x57f7e4.update]) {
+                            _0x1217a2[_0x57f7e4.hit][_0x57f7e4.anim][_0x57f7e4.update]() && _0x1217a2[_0x57f7e4.hit][_0x57f7e4.anim][_0x57f7e4.o] == ![] && (_0x1217a2[_0x57f7e4.hit][_0x57f7e4.update] = ![]);
+                            let _0x146d49 = (1 - _0x1217a2[_0x57f7e4.hit][_0x57f7e4.anim][_0x57f7e4.v]) * _0xcdfe98 * 600;
+                            _0x30d31a = Math.cos(_0x1217a2[_0x57f7e4.hit].angle - _0x1217a2.angle) * _0x146d49;
+                            _0x390660 = Math.sin(_0x1217a2[_0x57f7e4.hit].angle - _0x1217a2.angle) * _0x146d49;
+                        }
+                        
+                        let _0x24fbca = _0x1217a2.lock ? _0x32535e : _0x35acc3;
+                        _0x373076(_0x507512, _0x24fbca, _0x24fbca.width / 2 + _0x30d31a, _0x24fbca.height / 2 + _0x390660, -_0x24fbca.width, -_0x24fbca.height);
+                        _0x507512.restore();
+                    }
+                } catch (_0x52e44a) {
+                    console.context().log('Failed To Draw Ally Chest Images', _0x52e44a);
+                }
+
+                // --- УМНЫЙ ГЛОБАЛЬНЫЙ КЕШ СУНДУКОВ ---
+                if (!window.arctChestCache) window.arctChestCache = {};
+                
+                // Используем ID сундука для 100% точности, если его нет - округленные координаты
+                let chestKey = "chest_" + (_0x1217a2.id || (Math.round(_0x1217a2.x) + "_" + Math.round(_0x1217a2.y)));
+
+                if (!window.arctChestCache[chestKey]) {
+                    window.arctChestCache[chestKey] = { action: 0, info: 0 };
+                }
+
+                let myPlayer = gameWorld.fast_units[_0x57f7e4.uid];
+                let distToChest = myPlayer ? Math.hypot(myPlayer.x - _0x1217a2.x, myPlayer.y - _0x1217a2.y) : Infinity;
+
+                // 1. Если сервер шлет реальные цифры (вещи есть) - ВСЕГДА запоминаем
+                if (_0x1217a2.action > 0 && _0x1217a2.info > 0) {
+                    window.arctChestCache[chestKey].action = _0x1217a2.action;
+                    window.arctChestCache[chestKey].info = _0x1217a2.info;
+                } 
+                // 2. Если сервер шлет пустоту, мы верим ему ТОЛЬКО в радиусе 150px (когда ты реально стоишь рядом и лутаешь).
+                // Если мы дальше, игнорируем нули, так как сервер просто обрезал пакет данных из-за дистанции.
+                else if (distToChest < 150) {
+                    window.arctChestCache[chestKey].action = 0;
+                    window.arctChestCache[chestKey].info = 0;
+                }
+
+                // Определяем, что рисовать (отдаем приоритет реальным данным от сервера)
+                let drawAction = (_0x1217a2.action > 0) ? _0x1217a2.action : window.arctChestCache[chestKey].action;
+                let drawInfo = (_0x1217a2.info > 0) ? _0x1217a2.info : window.arctChestCache[chestKey].info;
+                // -----------------------------------------------------
+
+                if (drawAction > 0 && drawInfo > 0 && _0x73cd4e.chestInfo.active) {
+                    try {
+                        _0x507512.save();
+                        _0x507512.globalAlpha = 0.9;
+                        
+                        let _0x318080 = _0x46233c.WTF[drawAction / 2 - 1] ? _0x46233c.WTF[drawAction / 2 - 1].info[_0x57f7e4.img][0] : ![];
+                        
+                        if (_0x318080 && _0x318080.src) {
+                            _0x373076(_0x507512, _0x318080, _0x3b2ae4.WUF.x + _0x1217a2.x + 25, _0x3b2ae4.WUF.y + _0x1217a2.y + 15, -_0x46233c.WTF[drawAction / 2 - 1].info.width + 25, -_0x46233c.WTF[drawAction / 2 - 1].info.height + 25);
+                            _0x507512.globalAlpha = 1;
+                            _0x507512.font = "18px Baloo Paaji";
+                            _0x507512.strokeStyle = 'black';
+                            _0x507512.lineWidth = 7;
+                            _0x507512.strokeText('x' + drawInfo, _0x3b2ae4.WUF.x + _0x1217a2.x - 32, _0x3b2ae4.WUF.y + _0x1217a2.y + 20);
+                            _0x507512.fillStyle = !_0x73cd4e.darkMode ? "white" : "#BBB";
+                            _0x507512.fillText('x' + drawInfo, _0x3b2ae4.WUF.x + _0x1217a2.x - 32, _0x3b2ae4.WUF.y + _0x1217a2.y + 20);
+                        } else {
+                            if (_0x46233c.WTF[drawAction / 2 - 1]) {
+                                let _0x29d61c = new Image();
+                                _0x29d61c.src = _0x46233c.WTF[drawAction / 2 - 1].info[_0x57f7e4.img][0][_0x57f7e4.src];
+                                _0x46233c.WTF[drawAction / 2 - 1].info[_0x57f7e4.img][0] = _0x29d61c;
+                            }
+                        }
+                        _0x507512.restore();
+                    } catch (_0x3f1cd7) {
+                        console.context().log("Failed To Draw Chest Images", _0x3f1cd7);
+                    }
+                }
             }
-          }
-          try {
-            if (_0x73cd4e.chestInfo.active) {
-              _0x507512.save(), _0x507512.translate(_0x3b2ae4.WUF.x + _0x1217a2.x, _0x3b2ae4.WUF.y + _0x1217a2.y), _0x507512.rotate(_0x1217a2.angle);
-              let _0x30d31a = 0,
-                _0x390660 = 0;
-              if (_0x1217a2[_0x57f7e4.hit][_0x57f7e4.update]) {
-                _0x1217a2[_0x57f7e4.hit][_0x57f7e4.anim][_0x57f7e4.update]() && _0x1217a2[_0x57f7e4.hit][_0x57f7e4.anim][_0x57f7e4.o] == ![] && (_0x1217a2[_0x57f7e4.hit][_0x57f7e4.update] = ![]);
-                let _0x146d49 = (1 - _0x1217a2[_0x57f7e4.hit][_0x57f7e4.anim][_0x57f7e4.v]) * _0xcdfe98 * 600;
-                _0x30d31a = Math.cos(_0x1217a2[_0x57f7e4.hit].angle - _0x1217a2.angle) * _0x146d49, _0x390660 = Math.sin(_0x1217a2[_0x57f7e4.hit].angle - _0x1217a2.angle) * _0x146d49;
-              }
-              let _0x24fbca = _0x1217a2.lock ? _0x32535e : _0x35acc3;
-              _0x373076(_0x507512, _0x24fbca, _0x24fbca.width / 2 + _0x30d31a, _0x24fbca.height / 2 + _0x390660, -_0x24fbca.width, -_0x24fbca.height), _0x507512.restore();
-            }
-          } catch (_0x52e44a) {
-            console.context().log('Failed\x20To\x20Draw\x20Ally\x20Chest\x20Images', _0x52e44a);
-          }
-          if (_0x1217a2.action && _0x1217a2.info && _0x73cd4e.chestInfo.active) try {
-            _0x507512.save(), _0x507512.globalAlpha = 0.9;
-            let _0x318080 = _0x46233c.WTF[_0x1217a2.action / 2 - 1] ? _0x46233c.WTF[_0x1217a2.action / 2 - 1].info[_0x57f7e4.img][0] : ![];
-            if (_0x318080 && _0x318080.src) _0x373076(_0x507512, _0x318080, _0x3b2ae4.WUF.x + _0x1217a2.x + 25, _0x3b2ae4.WUF.y + _0x1217a2.y + 15, -_0x46233c.WTF[_0x1217a2.action / 2 - 1].info.width + 25, -_0x46233c.WTF[_0x1217a2.action / 2 - 1].info.height + 25), _0x507512.globalAlpha = 1, _0x507512.font = "18px Baloo Paaji", _0x507512.strokeStyle = 'black', _0x507512.lineWidth = 7, _0x507512.strokeText('x' + _0x1217a2.info, _0x3b2ae4.WUF.x + _0x1217a2.x - 32, _0x3b2ae4.WUF.y + _0x1217a2.y + 20), _0x507512.fillStyle = !_0x73cd4e.darkMode ? "white" : "#BBB", _0x507512.fillText('x' + _0x1217a2.info, _0x3b2ae4.WUF.x + _0x1217a2.x - 32, _0x3b2ae4.WUF.y + _0x1217a2.y + 20);else {
-              if (!_0x46233c.WTF[_0x1217a2.action / 2 - 1]) continue;
-              let _0x29d61c = new Image();
-              _0x29d61c.src = _0x46233c.WTF[_0x1217a2.action / 2 - 1].info[_0x57f7e4.img][0][_0x57f7e4.src], _0x46233c.WTF[_0x1217a2.action / 2 - 1].info[_0x57f7e4.img][0] = _0x29d61c;
-            }
-            _0x507512.restore();
-          } catch (_0x3f1cd7) {
-            console.context().log("Failed To Draw Chest Images", _0x3f1cd7);
-          }
         }
         if (_0x73cd4e.fireInfo) try {
           for (let _0x47cecd = 0, _0x4e6950 = [...gameWorld.units[EntityIDs.FIRE], ...gameWorld.units[EntityIDs.BIG_FIRE]], _0x3efe8f = _0x4e6950.length; _0x47cecd < _0x3efe8f; _0x47cecd++) {
@@ -6687,113 +6516,113 @@ if (_0x73cd4e.smoothRoofs || _0x73cd4e.Roof.active) {
         try {
           const _0x22f318 = [{
               'name': 'Krakens',
-              'setting': "Krakens",
+              'setting': 'Krakens',
               'units': gameWorld.units[EntityIDs.KRAKEN]
             }, {
-              'name': "Sand Worms",
+              'name': 'Sand Worms',
               'setting': 'Sandworms',
               'units': gameWorld.units[EntityIDs.SAND_WORM]
             }, {
-              'name': 'Baby\x20Dragons',
-              'setting': "BabyDragons",
+              'name': 'Baby Dragons',
+              'setting': 'BabyDragons',
               'units': gameWorld.units[EntityIDs.BABY_DRAGON]
             }, {
-              'name': 'Baby\x20Lavas',
-              'setting': "BabyLavaDragons",
+              'name': 'Baby Lavas',
+              'setting': 'BabyLavaDragons',
               'units': gameWorld.units[EntityIDs.BABY_LAVA]
             }, {
-              'name': "Baby Mammoths",
+              'name': 'Baby Mammoths',
               'setting': 'BabyMammoths',
               'units': gameWorld.units[EntityIDs.BABY_MAMMOTH]
             }, {
-              'name': "Bears",
-              'setting': "Bears",
+              'name': 'Bears',
+              'setting': 'Bears',
               'units': gameWorld.units[EntityIDs.BEAR]
             }, {
-              'name': "Boars",
-              'setting': "Boars",
+              'name': 'Boars',
+              'setting': 'Boars',
               'units': gameWorld.units[EntityIDs.BOAR]
             }, {
-              'name': "Crabs",
+              'name': 'Crabs',
               'setting': 'Crabs',
               'units': gameWorld.units[EntityIDs.CRAB]
             }, {
-              'name': "Dragons",
-              'setting': "Dragons",
+              'name': 'Dragons',
+              'setting': 'Dragons',
               'units': gameWorld.units[EntityIDs.DRAGON]
             }, {
-              'name': "Flames",
-              'setting': "FireMobs",
+              'name': 'Flames',
+              'setting': 'FireMobs',
               'units': gameWorld.units[EntityIDs.FLAME]
             }, {
-              'name': "Foxs",
-              'setting': "Foxes",
+              'name': 'Foxs',
+              'setting': 'Foxes',
               'units': gameWorld.units[EntityIDs.FOX]
             }, {
-              'name': "Hawks",
-              'setting': "Hawks",
+              'name': 'Hawks',
+              'setting': 'Hawks',
               'units': gameWorld.units[EntityIDs.HAWK]
             }, {
-              'name': 'Crab\x20Boss',
-              'setting': "KingCrabs",
+              'name': 'Crab Boss',
+              'setting': 'KingCrabs',
               'units': gameWorld.units[EntityIDs.CRAB_BOSS]
             }, {
-              'name': "Lava Dragons",
-              'setting': "LavaDragons",
+              'name': 'Lava Dragons',
+              'setting': 'LavaDragons',
               'units': gameWorld.units[EntityIDs.LAVA_DRAGON]
             }, {
-              'name': "Mammoths",
-              'setting': "Mammoths",
+              'name': 'Mammoths',
+              'setting': 'Mammoths',
               'units': gameWorld.units[EntityIDs.MAMMOTH]
             }, {
-              'name': "Penguins",
-              'setting': "Penguins",
+              'name': 'Penguins',
+              'setting': 'Penguins',
               'units': gameWorld.units[EntityIDs.PENGUIN]
             }, {
-              'name': "Piranhas",
+              'name': 'Piranhas',
               'setting': 'Piranhas',
               'units': gameWorld.units[EntityIDs.PIRANHA]
             }, {
               'name': 'Rabbits',
-              'setting': "Rabbits",
+              'setting': 'Rabbits',
               'units': gameWorld.units[EntityIDs.RABBIT]
             }, {
               'name': 'Spiders',
-              'setting': "Spiders",
+              'setting': 'Spiders',
               'units': gameWorld.units[EntityIDs.SPIDER]
             }, {
-              'name': "Vultures",
-              'setting': "Vultures",
+              'name': 'Vultures',
+              'setting': 'Vultures',
               'units': gameWorld.units[EntityIDs.VULTURE]
             }, {
-              'name': "Wolfs",
+              'name': 'Wolfs',
               'setting': 'Wolfs',
               'units': gameWorld.units[EntityIDs.WOLF]
             }, {
-              'name': "Crocodiles",
+              'name': 'Crocodiles',
               'setting': 'Crocodiles',
               'units': gameWorld.units[EntityIDs.CROCODILE]
             }, {
-              'name': 'Golden\x20Chickens',
-              'setting': "GoldenChickens",
+              'name': 'Golden Chickens',
+              'setting': 'GoldenChickens',
               'units': gameWorld.units[EntityIDs.GOLDEN_CHICKEN]
             }, {
-              'name': "Golden Hens",
-              'setting': "GoldenHens",
+              'name': 'Golden Hens',
+              'setting': 'GoldenHens',
               'units': gameWorld.units[EntityIDs.GOLDEN_HEN]
             }, {
-              'name': "Ocelots",
-              'setting': "Ocelots",
+              'name': 'Ocelots',
+              'setting': 'Ocelots',
               'units': gameWorld.units[EntityIDs.OCELOT]
             }, {
               'name': 'Parrots',
-              'setting': "Parrots",
+              'setting': 'Parrots',
               'units': gameWorld.units[EntityIDs.PARROT]
             }, {
               'name': 'Treasure Chests',
               'setting': 'TreasureChests',
               'units': gameWorld.units[EntityIDs.TREASURE_CHEST]
-            }];
+            }],
             _0x26ee55 = window.innerHeight / 2,
             _0x3da839 = 25;
           _0x507512.font = "18px Baloo Paaji", _0x507512.textAlign = "left", _0x507512.textBaseline = "middle";
@@ -6813,6 +6642,7 @@ if (_0x73cd4e.smoothRoofs || _0x73cd4e.Roof.active) {
         } catch (_0x2f5dca) {
           console.context().log("Failed To Draw Tracer Animal Counts", _0x2f5dca);
         }
+
         try {
           _0x73cd4e.Tracers.Krakens && gameWorld.units[EntityIDs.KRAKEN] && _0x2801de(gameWorld.units[EntityIDs.KRAKEN], '#000000'), 
           _0x73cd4e.Tracers.Sandworms && gameWorld.units[EntityIDs.SAND_WORM] && _0x2801de(gameWorld.units[EntityIDs.SAND_WORM], '#000000'), 
@@ -6844,11 +6674,6 @@ if (_0x73cd4e.smoothRoofs || _0x73cd4e.Roof.active) {
         } catch (_0x5da578) {
           console.context().log("Failed To Draw Animal Tracers", _0x5da578);
         }
-        try {
-  _0x73cd4e.Tracers.TreasureChests && gameWorld.units[EntityIDs.TREASURE_CHEST] && _0x2801de(gameWorld.units[EntityIDs.TREASURE_CHEST], "#FFD700");
-} catch (_0x5da578) {
-  console.context().log("Failed To Draw Treasure Chest Tracers", _0x5da578);
-}
         if (_0x73cd4e.movementPredictor) try {
           for (let _0x340718 = 0, _0x3ba5bf = [...gameWorld.units[EntityIDs.PARROT], ...gameWorld.units[EntityIDs.GOLDEN_HEN], ...gameWorld.units[EntityIDs.DEAD_BOX], ...gameWorld.units[EntityIDs.TREASURE_CHEST], ...gameWorld.units[EntityIDs.CRATE], ...gameWorld.units[EntityIDs.PENGUIN], ...gameWorld.units[EntityIDs.FOX], ...gameWorld.units[EntityIDs.BEAR], ...gameWorld.units[EntityIDs.PIRANHA], ...gameWorld.units[EntityIDs.CRAB], ...gameWorld.units[EntityIDs.FLAME], ...gameWorld.units[EntityIDs.LAVA_DRAGON], ...gameWorld.units[EntityIDs.BOAR], ...gameWorld.units[EntityIDs.CRAB_BOSS], ...gameWorld.units[EntityIDs.BABY_DRAGON], ...gameWorld.units[EntityIDs.BABY_LAVA], ...gameWorld.units[EntityIDs.BABY_MAMMOTH], ...gameWorld.units[EntityIDs.MAMMOTH], ...gameWorld.units[EntityIDs.PLAYERS], ...gameWorld.units[EntityIDs.RABBIT], ...gameWorld.units[EntityIDs.SAND_WORM], ...gameWorld.units[EntityIDs.WOLF], ...gameWorld.units[EntityIDs.SPIDER], ...gameWorld.units[EntityIDs.HAWK], ...gameWorld.units[EntityIDs.VULTURE], ...gameWorld.units[EntityIDs.DRAGON], ...gameWorld.units[EntityIDs.KRAKEN]], _0x317508 = _0x3ba5bf.length; _0x340718 < _0x317508; ++_0x340718) {
             let _0x2ab050 = _0x3ba5bf[_0x340718];
@@ -6913,11 +6738,28 @@ if (_0x73cd4e.smoothRoofs || _0x73cd4e.Roof.active) {
         _0x73cd4e.pingDisplay && _0x1ed932 && (_0x507512.save(), _0x507512.font = '30px\x20Baloo\x20Paaji', _0x507512.strokeStyle = "black", _0x507512.lineWidth = !_0x73cd4e.darkMode ? 7 : 7.5, _0x507512.strokeText(_0x1ed932 + 'ms', _0x3b2ae4.WUY.translate.x + -120, _0x3b2ae4.WUY.translate.y + (_0x73cd4e.fpsDisplay ? -20 : -50)), _0x507512.fillStyle = !_0x73cd4e.darkMode ? "white" : "#BBB", _0x507512.fillText(_0x1ed932 + 'ms', _0x3b2ae4.WUY.translate.x + -120, _0x3b2ae4.WUY.translate.y + (_0x73cd4e.fpsDisplay ? -20 : -50)), _0x507512.restore());
         _0x73cd4e.daysAlive && (_0x507512.save(), _0x507512.font = "30px Baloo Paaji", _0x507512.lineWidth = !_0x73cd4e.darkMode ? 7 : 7.5, _0x507512.strokeStyle = 'black', _0x507512.strokeText('' + _0x3b2ae4.WVF + " Day" + (_0x3b2ae4.WVF > 1 ? 's' : ''), _0x3b2ae4.WUY.translate.x + -120, _0x3b2ae4.WUY.translate.y + 10 + (_0x73cd4e.fpsDisplay ? 0 : -30) + (_0x73cd4e.pingDisplay && _0x1ed932 ? 0 : -30)), _0x507512.fillStyle = !_0x73cd4e.darkMode ? "white" : "#BBB", _0x507512.fillText('' + _0x3b2ae4.WVF + " Day" + (_0x3b2ae4.WVF > 1 ? 's' : ''), _0x3b2ae4.WUY.translate.x + -120, _0x3b2ae4.WUY.translate.y + 10 + (_0x73cd4e.fpsDisplay ? 0 : -30) + (_0x73cd4e.pingDisplay && _0x1ed932 ? 0 : -30)), _0x507512.restore());
         _0x73cd4e.timePlayed.active && (_0x507512.save(), _0x507512.font = "30px Baloo Paaji", _0x507512.lineWidth = !_0x73cd4e.darkMode ? 7 : 7.5, _0x507512.strokeStyle = "black", _0x507512.strokeText(_0x2f8222(Math.round((Date.now() - _0x73cd4e.timePlayed.start) / 1000)), _0x3b2ae4.WUY.translate.x + -120, _0x3b2ae4.WUY.translate.y + 40 + (_0x73cd4e.fpsDisplay ? 0 : -30) + (_0x73cd4e.pingDisplay && _0x1ed932 ? 0 : -30) + (_0x73cd4e.daysAlive ? 0 : -30)), _0x507512.fillStyle = !_0x73cd4e.darkMode ? "white" : '#BBB', _0x507512.fillText(_0x2f8222(Math.round((Date.now() - _0x73cd4e.timePlayed.start) / 1000)), _0x3b2ae4.WUY.translate.x + -120, _0x3b2ae4.WUY.translate.y + 40 + (_0x73cd4e.fpsDisplay ? 0 : -30) + (_0x73cd4e.pingDisplay && _0x1ed932 ? 0 : -30) + (_0x73cd4e.daysAlive ? 0 : -30)), _0x507512.restore());
-        let _0xe6cb63 = _0x3b2ae4.WUU.WUW.length > 0 ? -75 : 0;
+       let _0xe6cb63 = _0x3b2ae4.WUU.WUW.length > 0 ? -75 : 0;
         (_0x3b2ae4.WTZ.open || _0x3b2ae4.WTX.open && _0x3b2ae4.WUU.WUX(_0x44c140.WOOD) != -1 || _0x3b2ae4.WTT.open && _0x3b2ae4.WUU.WUX(_0x44c140.WILD_WHEAT) != -1 || _0x3b2ae4.WTU.open && _0x3b2ae4.WUU.WUX(_0x44c140.WOOD) != -1 || _0x3b2ae4.WTQ.open && _0x3b2ae4.WUU.WUX(_0x44c140.BUCKET_FULL) != -1 || _0x3b2ae4.WTV.open && (_0x3b2ae4.WUU.WUX(_0x44c140.WOOD) != -1 || _0x3b2ae4.WUU.WUX(_0x44c140.FLOUR) != -1)) && (_0xe6cb63 -= 50);
+        
         _0x73cd4e.gaugeTimer && (_0x507512.save(), _0x507512.translate((document.documentElement.clientWidth - 950) / 2, _0xe6cb63), _0x507512.font = "30px Baloo Paaji", _0x507512.strokeStyle = "black", _0x507512.lineWidth = !_0x73cd4e.darkMode ? 5 : 7.5, _0x507512.strokeText((5 - (Date.now() - _0x169d08) / 1000).toFixed(1), _0x46233c.WSJ.translate.x + 455, _0x46233c.WSJ.translate.y + 35), _0x507512.fillStyle = _0x2b2f75 ? "#54a34e" : 'red', _0x507512.fillText((5 - (Date.now() - _0x169d08) / 1000).toFixed(1), _0x46233c.WSJ.translate.x + 455, _0x46233c.WSJ.translate.y + 35), _0x507512.restore());
-        _0x73cd4e.gaugePercentages && (_0x507512.save(), _0x507512.translate((document.documentElement.clientWidth - 950) / 2, _0xe6cb63), _0x507512.font = '30px\x20Baloo\x20Paaji', _0x507512.strokeStyle = !_0x73cd4e.darkMode ? "#c12819" : 'black', _0x507512.lineWidth = !_0x73cd4e.darkMode ? 5 : 7.5, _0x507512.strokeText(Math.floor(_0x3b2ae4.WSJ.WUO * 100) + '%', 345, _0x46233c.WSJ.translate.y + 10), _0x507512.fillStyle = !_0x73cd4e.darkMode ? "white" : "#c12819", _0x507512.fillText(Math.floor(_0x3b2ae4.WSJ.WUO * 100) + '%', 345, _0x46233c.WSJ.translate.y + 10), _0x507512.font = '30px\x20Baloo\x20Paaji', _0x507512.strokeStyle = !_0x73cd4e.darkMode ? Math.floor(_0x3b2ae4.WSJ.WUM * 100) + (100 - Math.floor(_0x3b2ae4.WSJ.WUS * 100)) <= 100 ? "#4f9db2" : "#9c4036" : "black", _0x507512.strokeText(Math.floor(_0x3b2ae4.WSJ.WUM * 100) + (100 - Math.floor(_0x3b2ae4.WSJ.WUS * 100)) + '%', 575, _0x46233c.WSJ.translate.y + 10), _0x507512.fillStyle = !_0x73cd4e.darkMode ? "white" : "#4f9db2", _0x507512.fillText(Math.floor(_0x3b2ae4.WSJ.WUM * 100) + (100 - Math.floor(_0x3b2ae4.WSJ.WUS * 100)) + '%', 575, _0x46233c.WSJ.translate.y + 10), _0x507512.font = "30px Baloo Paaji", _0x507512.strokeStyle = !_0x73cd4e.darkMode ? "#004b87" : "black", _0x507512.strokeText(Math.floor(_0x3b2ae4.WSJ.WUP * 100) + '%', 805, _0x46233c.WSJ.translate.y + 10), _0x507512.fillStyle = !_0x73cd4e.darkMode ? "white" : "#004b87", _0x507512.fillText(Math.floor(_0x3b2ae4.WSJ.WUP * 100) + '%', 805, _0x46233c.WSJ.translate.y + 10), _0x507512.font = "30px Baloo Paaji", _0x507512.strokeStyle = !_0x73cd4e.darkMode ? '#54a34e' : "black", _0x507512.strokeText(Math.floor(_0x3b2ae4.WSJ.WUN * 100) + '%', 95, _0x46233c.WSJ.translate.y + 10), _0x507512.fillStyle = !_0x73cd4e.darkMode ? "white" : "#54a34e", _0x507512.fillText(Math.floor(_0x3b2ae4.WSJ.WUN * 100) + '%', 95, _0x46233c.WSJ.translate.y + 10), Math.floor(_0x3b2ae4.WSJ.WUR * 100) != 100 && (_0x507512.font = "30px Baloo Paaji", _0x507512.strokeStyle = !_0x73cd4e.darkMode ? "#004b87" : "black", _0x507512.strokeText(Math.floor(_0x3b2ae4.WSJ.WUR * 100) + '%', 465, _0x46233c.WSJ.translate.y - 30), _0x507512.fillStyle = !_0x73cd4e.darkMode ? "white" : "#4f9db2", _0x507512.fillText(Math.floor(_0x3b2ae4.WSJ.WUR * 100) + '%', 465, _0x46233c.WSJ.translate.y - 30)), _0x507512.restore());
-        if (_0x73cd4e.Aimbot.active && _0x73cd4e.Aimbot.rangeVisual) {
+        
+        _0x73cd4e.gaugePercentages && (_0x507512.save(), _0x507512.translate((document.documentElement.clientWidth - 950) / 2, _0xe6cb63), 
+        
+        /* === ЗДОРОВЬЕ (WUN): % НА МЕСТЕ, HP ЕЩЕ ЛЕВЕЕ (-35) И НИЖЕ (+30) === */
+        _0x507512.font = '30px\x20Baloo\x20Paaji', 
+        _0x507512.strokeStyle = !_0x73cd4e.darkMode ? '#54a34e' : "black", 
+        _0x507512.lineWidth = !_0x73cd4e.darkMode ? 5 : 7.5, 
+        _0x507512.strokeText(Math.floor(_0x3b2ae4.WSJ.WUN * 100) + '%', 95, _0x46233c.WSJ.translate.y + 10), 
+        _0x507512.fillStyle = !_0x73cd4e.darkMode ? "white" : "#54a34e", 
+        _0x507512.fillText(Math.floor(_0x3b2ae4.WSJ.WUN * 100) + '%', 95, _0x46233c.WSJ.translate.y + 10), 
+
+        _0x507512.font = '24px\x20Baloo\x20Paaji', 
+        _0x507512.strokeText(Math.floor(_0x3b2ae4.WSJ.WUN * 200) + ' HP', -50, _0x46233c.WSJ.translate.y + 35), 
+        _0x507512.fillStyle = !_0x73cd4e.darkMode ? "#d1ffd1" : "#54a34e", 
+        _0x507512.fillText(Math.floor(_0x3b2ae4.WSJ.WUN * 200) + ' HP', -50, _0x46233c.WSJ.translate.y + 35), 
+        
+        /* === ОСТАЛЬНЫЕ ШКАЛЫ === */
+        _0x507512.font = '30px\x20Baloo\x20Paaji', _0x507512.strokeStyle = !_0x73cd4e.darkMode ? Math.floor(_0x3b2ae4.WSJ.WUM * 100) + (100 - Math.floor(_0x3b2ae4.WSJ.WUS * 100)) <= 100 ? "#4f9db2" : "#9c4036" : "black", _0x507512.strokeText(Math.floor(_0x3b2ae4.WSJ.WUM * 100) + (100 - Math.floor(_0x3b2ae4.WSJ.WUS * 100)) + '%', 575, _0x46233c.WSJ.translate.y + 10), _0x507512.fillStyle = !_0x73cd4e.darkMode ? "white" : "#4f9db2", _0x507512.fillText(Math.floor(_0x3b2ae4.WSJ.WUM * 100) + (100 - Math.floor(_0x3b2ae4.WSJ.WUS * 100)) + '%', 575, _0x46233c.WSJ.translate.y + 10), _0x507512.font = "30px Baloo Paaji", _0x507512.strokeStyle = !_0x73cd4e.darkMode ? "#004b87" : "black", _0x507512.strokeText(Math.floor(_0x3b2ae4.WSJ.WUP * 100) + '%', 805, _0x46233c.WSJ.translate.y + 10), _0x507512.fillStyle = !_0x73cd4e.darkMode ? "white" : "#004b87", _0x507512.fillText(Math.floor(_0x3b2ae4.WSJ.WUP * 100) + '%', 805, _0x46233c.WSJ.translate.y + 10), _0x507512.font = "30px Baloo Paaji", _0x507512.strokeStyle = !_0x73cd4e.darkMode ? "#c12819" : 'black', _0x507512.strokeText(Math.floor(_0x3b2ae4.WSJ.WUO * 100) + '%', 345, _0x46233c.WSJ.translate.y + 10), _0x507512.fillStyle = !_0x73cd4e.darkMode ? "white" : "#c12819", _0x507512.fillText(Math.floor(_0x3b2ae4.WSJ.WUO * 100) + '%', 345, _0x46233c.WSJ.translate.y + 10), Math.floor(_0x3b2ae4.WSJ.WUR * 100) != 100 && (_0x507512.font = "30px Baloo Paaji", _0x507512.strokeStyle = !_0x73cd4e.darkMode ? "#004b87" : "black", _0x507512.strokeText(Math.floor(_0x3b2ae4.WSJ.WUR * 100) + '%', 465, _0x46233c.WSJ.translate.y - 30), _0x507512.fillStyle = !_0x73cd4e.darkMode ? "white" : "#4f9db2", _0x507512.fillText(Math.floor(_0x3b2ae4.WSJ.WUR * 100) + '%', 465, _0x46233c.WSJ.translate.y - 30)), _0x507512.restore());if (_0x73cd4e.Aimbot.active && _0x73cd4e.Aimbot.rangeVisual) {
           let _0x4cbf96 = gameWorld.fast_units[_0x57f7e4.uid];
           if (!_0x4cbf96) return;
           _0x507512.save(), _0x507512.globalAlpha = 0.3, _0x507512.lineWidth = 3.5;
@@ -7335,70 +7177,79 @@ function _0x470946() {
       let _0x1b4746 = 0,
         _0x5794ed = ![],
         _0x594fdd = 0;
-      function _0x2120c9() {
-        if (!_0x57f7e4.update || _0x46233c.WSJ.translate.y == 0 || _0x46233c.WSJ.translate.x == 0 || _0x53166f.websocket.readyState != 1) return;
-        if (_0x73cd4e.SmartCraft.active) {
-          if (_0x3b2ae4.WUZ.WVA) return;
-          _0x24549d();
-          let _0x23c8ae = [];
-          switch (_0x73cd4e.SmartCraft.option) {
+     function _0x2120c9() {
+    if (!_0x57f7e4.update || _0x46233c.WSJ.translate.y == 0 || _0x46233c.WSJ.translate.x == 0 || _0x53166f.websocket.readyState != 1) return;
+    if (_0x73cd4e.SmartCraft.active) {
+        if (_0x3b2ae4.WUZ.WVA) return;
+        _0x24549d();
+        let _0x23c8ae = [];
+        switch (_0x73cd4e.SmartCraft.option) {
             case "Reidite Spike Doors":
-              _0x23c8ae = [[_0x44c140.WOOD_DOOR, _0x44c140.WOOD_DOOR], [_0x44c140.STONE_DOOR, _0x44c140.STONE_DOOR], [_0x44c140.GOLD_DOOR, _0x44c140.GOLD_DOOR], [_0x44c140.DIAMOND_DOOR, _0x44c140.DIAMOND_DOOR], [_0x44c140.AMETHYST_DOOR, _0x44c140.AMETHYST_DOOR], [_0x44c140.REIDITE_DOOR, _0x44c140.REIDITE_DOOR], [_0x44c140.REIDITE_DOOR_SPIKE, _0x44c140.REIDITE_DOOR_SPIKE]];
-              break;
+                _0x23c8ae = [[_0x44c140.WOOD_DOOR, _0x44c140.WOOD_DOOR], [_0x44c140.STONE_DOOR, _0x44c140.STONE_DOOR], [_0x44c140.GOLD_DOOR, _0x44c140.GOLD_DOOR], [_0x44c140.DIAMOND_DOOR, _0x44c140.DIAMOND_DOOR], [_0x44c140.AMETHYST_DOOR, _0x44c140.AMETHYST_DOOR], [_0x44c140.REIDITE_DOOR, _0x44c140.REIDITE_DOOR], [_0x44c140.REIDITE_DOOR_SPIKE, _0x44c140.REIDITE_DOOR_SPIKE]];
+                break;
             case 'Amethyst\x20Spike\x20Doors':
-              _0x23c8ae = [[_0x44c140.WOOD_DOOR, _0x44c140.WOOD_DOOR], [_0x44c140.STONE_DOOR, _0x44c140.STONE_DOOR], [_0x44c140.GOLD_DOOR, _0x44c140.GOLD_DOOR], [_0x44c140.DIAMOND_DOOR, _0x44c140.DIAMOND_DOOR], [_0x44c140.AMETHYST_DOOR, _0x44c140.AMETHYST_DOOR], [_0x44c140.AMETHYST_DOOR_SPIKE, _0x44c140.AMETHYST_DOOR_SPIKE]];
-              break;
+                _0x23c8ae = [[_0x44c140.WOOD_DOOR, _0x44c140.WOOD_DOOR], [_0x44c140.STONE_DOOR, _0x44c140.STONE_DOOR], [_0x44c140.GOLD_DOOR, _0x44c140.GOLD_DOOR], [_0x44c140.DIAMOND_DOOR, _0x44c140.DIAMOND_DOOR], [_0x44c140.AMETHYST_DOOR, _0x44c140.AMETHYST_DOOR], [_0x44c140.AMETHYST_DOOR_SPIKE, _0x44c140.AMETHYST_DOOR_SPIKE]];
+                break;
             case 'Reidite\x20Walls':
-              _0x23c8ae = [[_0x44c140.WALL, _0x44c140.WALL], [_0x44c140.STONE_WALL, _0x44c140.STONE_WALL], [_0x44c140.GOLD_WALL, _0x44c140.GOLD_WALL], [_0x44c140.DIAMOND_WALL, _0x44c140.DIAMOND_WALL], [_0x44c140.AMETHYST_WALL, _0x44c140.AMETHYST_WALL], [_0x44c140.REIDITE_WALL, _0x44c140.REIDITE_WALL]];
-              break;
+                _0x23c8ae = [[_0x44c140.WALL, _0x44c140.WALL], [_0x44c140.STONE_WALL, _0x44c140.STONE_WALL], [_0x44c140.GOLD_WALL, _0x44c140.GOLD_WALL], [_0x44c140.DIAMOND_WALL, _0x44c140.DIAMOND_WALL], [_0x44c140.AMETHYST_WALL, _0x44c140.AMETHYST_WALL], [_0x44c140.REIDITE_WALL, _0x44c140.REIDITE_WALL]];
+                break;
             case "Reidite Spikes":
-              _0x23c8ae = [[_0x44c140.WALL, _0x44c140.WALL], [_0x44c140.STONE_WALL, _0x44c140.STONE_WALL], [_0x44c140.GOLD_WALL, _0x44c140.GOLD_WALL], [_0x44c140.DIAMOND_WALL, _0x44c140.DIAMOND_WALL], [_0x44c140.AMETHYST_WALL, _0x44c140.AMETHYST_WALL], [_0x44c140.REIDITE_WALL, _0x44c140.REIDITE_WALL], [_0x44c140.REIDITE_SPIKE, _0x44c140.REIDITE_SPIKE]];
-              break;
+                _0x23c8ae = [[_0x44c140.WALL, _0x44c140.WALL], [_0x44c140.STONE_WALL, _0x44c140.STONE_WALL], [_0x44c140.GOLD_WALL, _0x44c140.GOLD_WALL], [_0x44c140.DIAMOND_WALL, _0x44c140.DIAMOND_WALL], [_0x44c140.AMETHYST_WALL, _0x44c140.AMETHYST_WALL], [_0x44c140.REIDITE_WALL, _0x44c140.REIDITE_WALL], [_0x44c140.REIDITE_SPIKE, _0x44c140.REIDITE_SPIKE]];
+                break;
             case 'Amethyst\x20Spikes':
-              _0x23c8ae = [[_0x44c140.WALL, _0x44c140.WALL], [_0x44c140.STONE_WALL, _0x44c140.STONE_WALL], [_0x44c140.GOLD_WALL, _0x44c140.GOLD_WALL], [_0x44c140.DIAMOND_WALL, _0x44c140.DIAMOND_WALL], [_0x44c140.AMETHYST_WALL, _0x44c140.AMETHYST_WALL], [_0x44c140.AMETHYST_SPIKE, _0x44c140.AMETHYST_SPIKE]];
-              break;
+                _0x23c8ae = [[_0x44c140.WALL, _0x44c140.WALL], [_0x44c140.STONE_WALL, _0x44c140.STONE_WALL], [_0x44c140.GOLD_WALL, _0x44c140.GOLD_WALL], [_0x44c140.DIAMOND_WALL, _0x44c140.DIAMOND_WALL], [_0x44c140.AMETHYST_WALL, _0x44c140.AMETHYST_WALL], [_0x44c140.AMETHYST_SPIKE, _0x44c140.AMETHYST_SPIKE]];
+                break;
             case "Diamond Spikes":
-              _0x23c8ae = [[_0x44c140.WALL, _0x44c140.WALL], [_0x44c140.STONE_WALL, _0x44c140.STONE_WALL], [_0x44c140.GOLD_WALL, _0x44c140.GOLD_WALL], [_0x44c140.DIAMOND_WALL, _0x44c140.DIAMOND_WALL], [_0x44c140.DIAMOND_SPIKE, _0x44c140.DIAMOND_SPIKE]];
-              break;
+                _0x23c8ae = [[_0x44c140.WALL, _0x44c140.WALL], [_0x44c140.STONE_WALL, _0x44c140.STONE_WALL], [_0x44c140.GOLD_WALL, _0x44c140.GOLD_WALL], [_0x44c140.DIAMOND_WALL, _0x44c140.DIAMOND_WALL], [_0x44c140.DIAMOND_SPIKE, _0x44c140.DIAMOND_SPIKE]];
+                break;
             case "Gold Spikes":
-              _0x23c8ae = [[_0x44c140.WALL, _0x44c140.WALL], [_0x44c140.STONE_WALL, _0x44c140.STONE_WALL], [_0x44c140.GOLD_WALL, _0x44c140.GOLD_WALL], [_0x44c140.GOLD_SPIKE, _0x44c140.GOLD_SPIKE]];
-              break;
+                _0x23c8ae = [[_0x44c140.WALL, _0x44c140.WALL], [_0x44c140.STONE_WALL, _0x44c140.STONE_WALL], [_0x44c140.GOLD_WALL, _0x44c140.GOLD_WALL], [_0x44c140.GOLD_SPIKE, _0x44c140.GOLD_SPIKE]];
+                break;
             case "Reidite Swords":
-              _0x23c8ae = [[_0x44c140.SWORD_WOOD, _0x44c140.SWORD_WOOD], [_0x44c140.SWORD, _0x44c140.SWORD], [_0x44c140.SWORD_GOLD, _0x44c140.SWORD_GOLD], [_0x44c140.SWORD_DIAMOND, _0x44c140.SWORD_DIAMOND], [_0x44c140.SWORD_AMETHYST, _0x44c140.SWORD_AMETHYST], [_0x44c140.REIDITE_SWORD, _0x44c140.REIDITE_SWORD]];
-              break;
+                _0x23c8ae = [[_0x44c140.SWORD_WOOD, _0x44c140.SWORD_WOOD], [_0x44c140.SWORD, _0x44c140.SWORD], [_0x44c140.SWORD_GOLD, _0x44c140.SWORD_GOLD], [_0x44c140.SWORD_DIAMOND, _0x44c140.SWORD_DIAMOND], [_0x44c140.SWORD_AMETHYST, _0x44c140.SWORD_AMETHYST], [_0x44c140.REIDITE_SWORD, _0x44c140.REIDITE_SWORD]];
+                break;
             case 'Reidite\x20Spears':
-              _0x23c8ae = [[_0x44c140.WOOD_SPEAR, _0x44c140.WOOD_SPEAR], [_0x44c140.SPEAR, _0x44c140.SPEAR], [_0x44c140.GOLD_SPEAR, _0x44c140.GOLD_SPEAR], [_0x44c140.DIAMOND_SPEAR, _0x44c140.DIAMOND_SPEAR], [_0x44c140.AMETHYST_SPEAR, _0x44c140.AMETHYST_SPEAR], [_0x44c140.REIDITE_SPEAR, _0x44c140.REIDITE_SPEAR]];
-              break;
+                _0x23c8ae = [[_0x44c140.WOOD_SPEAR, _0x44c140.WOOD_SPEAR], [_0x44c140.SPEAR, _0x44c140.SPEAR], [_0x44c140.GOLD_SPEAR, _0x44c140.GOLD_SPEAR], [_0x44c140.DIAMOND_SPEAR, _0x44c140.DIAMOND_SPEAR], [_0x44c140.AMETHYST_SPEAR, _0x44c140.AMETHYST_SPEAR], [_0x44c140.REIDITE_SPEAR, _0x44c140.REIDITE_SPEAR]];
+                break;
             case "Reidite Helmets":
-              _0x23c8ae = [[_0x44c140.WOOD_HELMET, _0x44c140.WOOD_HELMET], [_0x44c140.STONE_HELMET, _0x44c140.STONE_HELMET], [_0x44c140.GOLD_HELMET, _0x44c140.GOLD_HELMET], [_0x44c140.DIAMOND_HELMET, _0x44c140.DIAMOND_HELMET], [_0x44c140.AMETHYST_HELMET, _0x44c140.AMETHYST_HELMET], [_0x44c140.REIDITE_HELMET, _0x44c140.REIDITE_HELMET]];
-              break;
+                _0x23c8ae = [[_0x44c140.WOOD_HELMET, _0x44c140.WOOD_HELMET], [_0x44c140.STONE_HELMET, _0x44c140.STONE_HELMET], [_0x44c140.GOLD_HELMET, _0x44c140.GOLD_HELMET], [_0x44c140.DIAMOND_HELMET, _0x44c140.DIAMOND_HELMET], [_0x44c140.AMETHYST_HELMET, _0x44c140.AMETHYST_HELMET], [_0x44c140.REIDITE_HELMET, _0x44c140.REIDITE_HELMET]];
+                break;
             case "Reidite Shields":
-              _0x23c8ae = [[_0x44c140.WOOD_SHIELD, _0x44c140.WOOD_SHIELD], [_0x44c140.STONE_SHIELD, _0x44c140.STONE_SHIELD], [_0x44c140.GOLD_SHIELD, _0x44c140.GOLD_SHIELD], [_0x44c140.DIAMOND_SHIELD, _0x44c140.DIAMOND_SHIELD], [_0x44c140.AMETHYST_SHIELD, _0x44c140.AMETHYST_SHIELD], [_0x44c140.REIDITE_SHIELD, _0x44c140.REIDITE_SHIELD]];
-              break;
+                _0x23c8ae = [[_0x44c140.WOOD_SHIELD, _0x44c140.WOOD_SHIELD], [_0x44c140.STONE_SHIELD, _0x44c140.STONE_SHIELD], [_0x44c140.GOLD_SHIELD, _0x44c140.GOLD_SHIELD], [_0x44c140.DIAMOND_SHIELD, _0x44c140.DIAMOND_SHIELD], [_0x44c140.AMETHYST_SHIELD, _0x44c140.AMETHYST_SHIELD], [_0x44c140.REIDITE_SHIELD, _0x44c140.REIDITE_SHIELD]];
+                break;
+            // --- НОВАЯ ОПЦИЯ ---
+            case "Golden Fork":
+                _0x23c8ae = [[_0x44c140.PITCHFORK, _0x44c140.PITCHFORK], [_0x44c140.WATERMELON, _0x44c140.WATERMELON], [_0x44c140.LOCKPICK, _0x44c140.LOCKPICK]];
+                break;
+            // -------------------
             default:
-              break;
-          }
-          if (!_0x5794ed) {
+                break;
+        }
+        if (!_0x5794ed) {
             _0x5794ed = !![];
             if (_0x3b2ae4.WUU.WUV[_0x23c8ae[_0x23c8ae.length - 1][1]]) {
-              let _0x4dbf72 = _0x3b2ae4.WUU.WUV[_0x23c8ae[_0x23c8ae.length - 1][1]];
-              _0x594fdd = _0x4dbf72 + Number(_0x73cd4e.SmartCraft.amount);
+                let _0x4dbf72 = _0x3b2ae4.WUU.WUV[_0x23c8ae[_0x23c8ae.length - 1][1]];
+                _0x594fdd = _0x4dbf72 + Number(_0x73cd4e.SmartCraft.amount);
             } else _0x594fdd = Number(_0x73cd4e.SmartCraft.amount);
-          }
-          _0x1b4746 = 0;
-          for (let _0x5c82a0 = 0; _0x5c82a0 < _0x23c8ae.length; _0x5c82a0++) {
+        }
+        _0x1b4746 = 0;
+        for (let _0x5c82a0 = 0; _0x5c82a0 < _0x23c8ae.length; _0x5c82a0++) {
             _0x23c8ae[_0x5c82a0][0] == _0x3effc6 && _0x5c82a0 != _0x23c8ae.length - 1 && (_0x1b4746 = _0x5c82a0 + 1);
-          }
-          if (_0x1b4746 == 0) for (let _0x3e0865 = 0; _0x3e0865 < _0x23c8ae.length; _0x3e0865++) {
-            _0x3b2ae4.WUU.WUV[_0x23c8ae[_0x3e0865][1]] && _0x3e0865 != _0x23c8ae.length - 1 && (_0x1b4746 = _0x3e0865 + 1);
-          }
-          if (_0x3b2ae4.WUU.WUV[_0x23c8ae[_0x23c8ae.length - 1][1]] >= _0x594fdd) {
+        }
+        if (_0x1b4746 == 0) {
+            for (let _0x3e0865 = 0; _0x3e0865 < _0x23c8ae.length; _0x3e0865++) {
+                _0x3b2ae4.WUU.WUV[_0x23c8ae[_0x3e0865][1]] && _0x3e0865 != _0x23c8ae.length - 1 && (_0x1b4746 = _0x3e0865 + 1);
+            }
+        }
+        if (_0x3b2ae4.WUU.WUV[_0x23c8ae[_0x23c8ae.length - 1][1]] >= _0x594fdd) {
             _0x73cd4e.SmartCraft.active = ![];
             return;
-          }
-          _0x53166f.WQI(_0x23c8ae[_0x1b4746][0], 1);
-        } else !_0x73cd4e.SmartCraft.active && (_0x5794ed = ![], _0x594fdd = 0);
-      }
+        }
+        _0x53166f.WQI(_0x23c8ae[_0x1b4746][0], 1);
+    } else {
+        !_0x73cd4e.SmartCraft.active && (_0x5794ed = ![], _0x594fdd = 0);
+    }
+}
       function _0x6ad0dd() {
         if (!_0x57f7e4.update || _0x46233c.WSJ.translate.y == 0 || _0x46233c.WSJ.translate.x == 0 || _0x53166f.websocket.readyState != 1) return;
         let _0x5d45af = gameWorld.fast_units[_0x57f7e4.uid];
@@ -7427,47 +7278,81 @@ function _0x470946() {
           _0x73cd4e.AutoTotem.active && !_0x3b2ae4.WUD.wait && _0x3b2ae4.WUB.length === 0 && !((_0xcb66d2[_0xe0692e].info & 16) >> 4) && _0xcb66d2[_0xe0692e].info < 8 && _0x3e37f7(_0xcb66d2[_0xe0692e], _0x142792) < 300 && (_0x3b2ae4.WUD[_0x57f7e4.pid] = _0xcb66d2[_0xe0692e][_0x57f7e4.pid], _0x3b2ae4.WUD.id = _0xcb66d2[_0xe0692e].id, _0x53166f.WQD());
         }
       }
-      function _0x58b203() {
-        if (!_0x57f7e4.update || _0x46233c.WSJ.translate.y == 0 || _0x46233c.WSJ.translate.x == 0 || _0x53166f.websocket.readyState != 1) return;
-        let _0x836028 = gameWorld.fast_units[_0x57f7e4.uid];
-        if (_0x73cd4e.AutoBuild.active) {
-          if (_0x3b2ae4.WUZ.WVA || !_0x836028) return;
-          if (_0x73cd4e.AutoBuild.mode == "Bridges" && _0x3b2ae4.WUU.WUV[_0x44c140.BRIDGE]) {
-            let _0x37bdca = Math.PI * 2,
-              _0x36d526 = Math.floor((_0x836028.angle + _0x37bdca) % _0x37bdca * 255 / _0x37bdca);
-            _0x53166f.websocket.send(JSON.stringify([_0x4e5e95.build, _0x44c140.BRIDGE, _0x36d526, 0]));
-          }
-          if (_0x73cd4e.AutoBuild.mode == "Stone Bridges" && _0x3b2ae4.WUU.WUV[_0x44c140.STONE_BRIDGE]) {
-            let _0x37bdca = Math.PI * 2,
-              _0x36d526 = Math.floor((_0x836028.angle + _0x37bdca) % _0x37bdca * 255 / _0x37bdca);
-            _0x53166f.websocket.send(JSON.stringify([_0x4e5e95.build, _0x44c140.STONE_BRIDGE, _0x36d526, 0]));
-          }
-          if (_0x73cd4e.AutoBuild.mode == "Plots" && _0x3b2ae4.WUU.WUV[_0x44c140.PLOT]) {
-            let _0x411ade = Math.PI * 2,
-              _0x5c6063 = Math.floor((_0x836028.angle + _0x411ade) % _0x411ade * 255 / _0x411ade);
-            _0x53166f.websocket.send(JSON.stringify([_0x4e5e95.build, _0x44c140.PLOT, _0x5c6063, 0]));
-          }
-          if (_0x73cd4e.AutoBuild.mode == "Roofs" && _0x3b2ae4.WUU.WUV[_0x44c140.ROOF]) {
-            let _0x1e9874 = Math.PI * 2,
-              _0x42bc19 = Math.floor((_0x836028.angle + _0x1e9874) % _0x1e9874 * 255 / _0x1e9874);
-            _0x53166f.websocket.send(JSON.stringify([_0x4e5e95.build, _0x44c140.ROOF, _0x42bc19, 0]));
-          }
-          if (_0x73cd4e.AutoBuild.mode == "Stone Roofs" && _0x3b2ae4.WUU.WUV[_0x44c140.STONE_ROOF]) {
-            let _0x1e9874 = Math.PI * 2,
-              _0x42bc19 = Math.floor((_0x836028.angle + _0x1e9874) % _0x1e9874 * 255 / _0x1e9874);
-            _0x53166f.websocket.send(JSON.stringify([_0x4e5e95.build, _0x44c140.STONE_ROOF, _0x42bc19, 0]));
-          }
-          if (_0x73cd4e.AutoBuild.mode == "Windows" && _0x3b2ae4.WUU.WUV[_0x44c140.WOODEN_WINDOW]) {
-            let _0x1e9874 = Math.PI * 2,
-              _0x42bc19 = Math.floor((_0x836028.angle + _0x1e9874) % _0x1e9874 * 255 / _0x1e9874);
-            _0x53166f.websocket.send(JSON.stringify([_0x4e5e95.build, _0x44c140.WOODEN_WINDOW, _0x42bc19, 0]));
-          }
-          if (_0x73cd4e.AutoBuild.mode == "Stone Windows" && _0x3b2ae4.WUU.WUV[_0x44c140.STONE_WINDOW]) {
-            let _0x1e9874 = Math.PI * 2,
-              _0x42bc19 = Math.floor((_0x836028.angle + _0x1e9874) % _0x1e9874 * 255 / _0x1e9874);
-            _0x53166f.websocket.send(JSON.stringify([_0x4e5e95.build, _0x44c140.STONE_WINDOW, _0x42bc19, 0]));
-          }
-        }
+    function _0x58b203() {
+    if (!_0x57f7e4.update || _0x46233c.WSJ.translate.y == 0 || _0x46233c.WSJ.translate.x == 0 || _0x53166f.websocket.readyState != 1) return;
+    
+    // ВЫНОСИМ КАРТЫ ЗА ПРЕДЕЛЫ ИНТЕРВАЛА, чтобы не грузить процессор
+    const BuildMap = {
+        "Bridges": _0x44c140.BRIDGE,
+        "Stone Bridges": _0x44c140.STONE_BRIDGE,
+        "Plots": _0x44c140.PLOT,
+        "Roofs": _0x44c140.ROOF,
+        "Stone Roofs": _0x44c140.STONE_ROOF,
+        "Windows": _0x44c140.WOODEN_WINDOW,
+        "Stone Windows": _0x44c140.STONE_WINDOW
+    };
+
+    const ReverseBuildMap = {};
+    for (let key in BuildMap) {
+        ReverseBuildMap[BuildMap[key]] = key;
+    }
+
+    if (!window._arctAutoBuildSpammer) {
+        window._arctAutoBuildSpammer = setInterval(() => {
+            // 1. Если автобилд выключен в меню — ничего не делаем
+            if (typeof _0x73cd4e === 'undefined' || !_0x73cd4e.AutoBuild || !_0x73cd4e.AutoBuild.active) return;
+            
+            // 2. Базовые проверки, чтобы не крашнуло игру
+            if (typeof _0x3b2ae4 === 'undefined' || !_0x3b2ae4.WUZ || _0x3b2ae4.WUZ.WVA) return;
+            if (typeof _0x53166f === 'undefined' || !_0x53166f.websocket || _0x53166f.websocket.readyState !== 1) return;
+
+            // 3. ДОСТАЕМ СВЕЖЕГО ПЕРСОНАЖА (чтобы угол обновлялся)
+            if (typeof gameWorld === 'undefined' || typeof _0x57f7e4 === 'undefined') return;
+            let me = gameWorld.fast_units[_0x57f7e4.uid];
+            if (!me || me.angle === undefined) return;
+
+            // === УМНОЕ ЗАПОМИНАНИЕ (работает ТОЛЬКО если стоит галочка Auto Mode) ===
+            if (_0x73cd4e.AutoBuild.autoMode && window._arctLastBuildItem !== undefined) {
+                let newModeName = ReverseBuildMap[window._arctLastBuildItem];
+                
+                // Если предмет есть в нашем списке и отличается от текущего в меню
+                if (newModeName && _0x73cd4e.AutoBuild.mode !== newModeName) {
+                    _0x73cd4e.AutoBuild.mode = newModeName; 
+                    
+                    // Обновляем визуальное отображение в меню
+                    if (typeof _0xa896c1 !== 'undefined' && _0xa896c1.updateGuiValues) {
+                        _0xa896c1.updateGuiValues();
+                    }
+                }
+                // КРИТИЧЕСКИ ВАЖНО: очищаем переменную, чтобы не заблокировать ручной выбор в меню
+                window._arctLastBuildItem = undefined;
+            }
+            // ========================================================================
+
+            let buildId = BuildMap[_0x73cd4e.AutoBuild.mode];
+
+            if (buildId !== undefined && _0x3b2ae4.WUU.WUV[buildId]) {
+                // Считаем угол по СВЕЖИМ данным из me.angle
+                let pi2 = Math.PI * 2;
+                let currentAngle = Math.floor((((me.angle + pi2) % pi2) * 255) / pi2);
+                
+                try {
+                    let originalSend = _0x53166f.websocket._originalSend || _0x53166f.websocket.send;
+                    originalSend.call(_0x53166f.websocket, JSON.stringify([_0x4e5e95.build, buildId, currentAngle, 0]));
+                } catch(e) {}
+            } else {
+                // Предметы закончились -> САМ ВЫРУБАЕТ Автобилд
+                _0x73cd4e.AutoBuild.active = false;
+                if (typeof _0xa896c1 !== 'undefined') {
+                    if (_0xa896c1.updateGuiValues) _0xa896c1.updateGuiValues();
+                    if (_0xa896c1.saveSettings) _0xa896c1.saveSettings(); // Сохраняем конфиг только при реальном отключении
+                }
+            }
+        }, 50); // Спамит 20 раз в сек
+    
+
+
+}
       }
       let _0x5ab5c9 = 0,
         _0x2faeb5 = 0;
@@ -7694,320 +7579,303 @@ function _0x470946() {
           }
         }
       }
-      function _0x55cfc7() {
-        if (!_0x57f7e4.update || _0x46233c.WSJ.translate.y == 0 || _0x46233c.WSJ.translate.x == 0 || _0x53166f.websocket.readyState != 1) return;
-        if (_0x73cd4e.AutoFarm.active) {
-          let _0x5b5d3f = gameWorld.fast_units[_0x57f7e4.uid];
-          if (!_0x5b5d3f) return;
-          let _0x147baf = {
-            'Object': null,
-            'Distance': -1,
-            'Function': 0
-          };
-          var _0x425aee = {
-            'x': _0x73cd4e.AutoFarm.TLX,
-            'y': _0x73cd4e.AutoFarm.TLY,
-            'width': _0x73cd4e.AutoFarm.BRX - _0x73cd4e.AutoFarm.TLX,
-            'height': _0x73cd4e.AutoFarm.BRY - _0x73cd4e.AutoFarm.TLY
-          };
-          for (var _0x3645a4 = 0, _0xa306e6 = [...gameWorld.units[EntityIDs.SEED], ...gameWorld.units[EntityIDs.PUMPKIN_SEED], ...gameWorld.units[EntityIDs.GARLIC_SEED], ...gameWorld.units[EntityIDs.THORNBUSH_SEED], ...gameWorld.units[EntityIDs.CARROT_SEED], ...gameWorld.units[EntityIDs.TOMATO_SEED], ...gameWorld.units[EntityIDs.WATERMELON_SEED], ...gameWorld.units[EntityIDs.ALOE_VERA_SEED], ...gameWorld.units[EntityIDs.WHEAT_SEED]], _0x1cdb5d = _0xa306e6.length, _0x35dcf5 = null, _0x32c191 = null; _0x3645a4 < _0x1cdb5d; ++_0x3645a4) {
-            _0x35dcf5 = _0xa306e6[_0x3645a4];
-            if (!_0x35dcf5.info || _0x35dcf5.info === 10) continue;
-            if (!_0x3b2ae4.WUU.WUV[_0x44c140.WATERING_CAN_FULL] && _0x35dcf5.info === 16) continue;
-            _0x425aee.x < _0x35dcf5.x - 50 + 100 && _0x425aee.x + _0x425aee.width > _0x35dcf5.x - 50 && _0x425aee.y < _0x35dcf5.y - 50 + 100 && _0x425aee.y + _0x425aee.height > _0x35dcf5.y - 50 && (_0x32c191 = (_0x5b5d3f.x - _0x35dcf5.x) ** 2 + (_0x5b5d3f.y - _0x35dcf5.y) ** 2, (_0x147baf.Distance === -1 || _0x32c191 < _0x147baf.Distance) && (_0x147baf.Distance = _0x32c191, _0x147baf.Object = _0x35dcf5));
-          }
-          let _0x2d4f1d = _0x3b2ae4.WSJ.WUM + (1 - _0x3b2ae4.WSJ.WUS) <= 0.1 && _0x53166f.websocket.url.includes("experimental");
-          if (_0x147baf.Object && Math.floor(_0x3b2ae4.WSJ.WUN * 100) > 80 && !_0x2d4f1d) {
-            _0x147baf.Distance = _0x3e37f7(_0x5b5d3f, _0x147baf.Object);
-            switch (_0x147baf.Object.info) {
-              case 16:
-              case 17:
-              case 18:
-              case 19:
-                if (_0x3b2ae4.WUU.WUV[_0x44c140.WATERING_CAN_FULL]) _0x5b5d3f.right !== _0x44c140.WATERING_CAN_FULL && _0x53166f.WQR(_0x44c140.WATERING_CAN_FULL), _0x147baf.Function = 1;else {
-                  if (_0x3b2ae4.WUU.WUV[_0x44c140.PITCHFORK]) _0x5b5d3f.right !== _0x44c140.PITCHFORK && _0x53166f.WQR(_0x44c140.PITCHFORK);else _0x3b2ae4.WUU.WUV[_0x44c140.PITCHFORK2] && _0x5b5d3f.right !== _0x44c140.PITCHFORK2 && _0x53166f.WQR(_0x44c140.PITCHFORK2);
-                  _0x147baf.Function = 2;
-                }
-                ;
-                break;
-              case 1:
-              case 2:
-              case 3:
-                if (_0x3b2ae4.WUU.WUV[_0x44c140.PITCHFORK]) _0x5b5d3f.right !== _0x44c140.PITCHFORK && _0x53166f.WQR(_0x44c140.PITCHFORK);else _0x3b2ae4.WUU.WUV[_0x44c140.PITCHFORK2] && _0x5b5d3f.right !== _0x44c140.PITCHFORK2 && _0x53166f.WQR(_0x44c140.PITCHFORK2);
-                ;
-                _0x147baf.Function = 2;
-                break;
+    function _0x55cfc7() {
+        // Динамически подтягиваем свежие данные игры каждый тик (спасает после реконнекта)
+        let mapKeys = window.v2605 || typeof _0x57f7e4 !== 'undefined' ? _0x57f7e4 : null;
+        let userInst = window.v2604 || typeof _0x3b2ae4 !== 'undefined' ? _0x3b2ae4 : null;
+        let sockInst = window.v2600 || typeof _0x53166f !== 'undefined' ? _0x53166f : null;
+        let camInst = window.v2602 || typeof _0x46233c !== 'undefined' ? _0x46233c : null;
+        let world = window.v2603 || typeof gameWorld !== 'undefined' ? gameWorld : null;
+        let conf = typeof _0x73cd4e !== 'undefined' ? _0x73cd4e : window.arctConfig;
+
+        if (!mapKeys || !userInst || !sockInst || !camInst || !world || !conf) return;
+        if (!mapKeys.update || camInst.WSJ.translate.y == 0 || camInst.WSJ.translate.x == 0) return;
+        
+        let ws = sockInst.websocket;
+        if (!ws || ws.readyState !== 1) return;
+
+        // 1. ОСТАНОВКА ПРИ ВЫКЛЮЧЕНИИ АВТОФАРМА
+        if (!conf.AutoFarm.active) {
+            if (window._lastAutoFarmState) {
+                window._lastAutoFarmState = false;
+                window._lastAutoFarmDir = 0;
+                let sender = ws._originalSend || ws.send;
+                try {
+                    sender.call(ws, new Uint8Array([37, 0])); 
+                    sender.call(ws, "[35]"); // Оптимизировано
+                } catch(e) {}
             }
-            let _0x56830f = {
-                'x': _0x5b5d3f.x - _0x147baf.Object.x,
-                'y': _0x5b5d3f.y - _0x147baf.Object.y
-              },
-              _0x2b8d4a = {
-                'x': Math.abs(_0x5b5d3f.x - _0x147baf.Object.x),
-                'y': Math.abs(_0x5b5d3f.y - _0x147baf.Object.y)
-              },
-              _0x193f82 = 0;
-            _0x2b8d4a.x > 50 && (_0x56830f.x > 0 && (_0x193f82 += 1), _0x56830f.x < 0 && (_0x193f82 += 2));
-            _0x2b8d4a.y > 50 && (_0x56830f.y > 0 && (_0x193f82 += 8), _0x56830f.y < 0 && (_0x193f82 += 4));
-            if (_0x193f82 == 0) {
-              _0x541fb9++;
-              if (_0x541fb9 == 5) {
-                let _0x293873 = [1, 2, 4, 8];
-                _0x193f82 += _0x293873[Math.floor(Math.random() * 4)];
-              }
-            }
-            (function (dir) {
-              const keys = {
-                1: 'a',
-                2: 'd',
-                4: 's',
-                8: 'w'
-              };
-              const keyCodes = {
-                1: 65,
-                2: 68,
-                4: 83,
-                8: 87
-              };
-
-              // Release all keys
-              ['w', 'a', 's', 'd'].forEach(k => {
-                const code = k.toUpperCase().charCodeAt(0);
-                const ev = new KeyboardEvent('keyup', {
-                  key: k,
-                  code: 'Key' + k.toUpperCase(),
-                  keyCode: code,
-                  which: code,
-                  bubbles: true,
-                  cancelable: true
-                });
-                window.dispatchEvent(ev);
-                document.dispatchEvent(ev);
-                document.body.dispatchEvent(ev);
-                document.documentElement.dispatchEvent(ev);
-              });
-              if (dir === 0) return;
-
-              // Press keys based on direction bitmask (inversé)
-              [1, 2, 4, 8].forEach(bit => {
-                if (dir & bit) {
-                  const k = keys[bit];
-                  const code = keyCodes[bit];
-                  const ev = new KeyboardEvent('keydown', {
-                    key: k,
-                    code: 'Key' + k.toUpperCase(),
-                    keyCode: code,
-                    which: code,
-                    bubbles: true,
-                    cancelable: true
-                  });
-                  window.dispatchEvent(ev);
-                  document.dispatchEvent(ev);
-                  document.body.dispatchEvent(ev);
-                  document.documentElement.dispatchEvent(ev);
-                }
-              });
-            })(_0x193f82), _0x2b8d4a.x < (_0x147baf.Function === 1 ? 120 : 300) && _0x2b8d4a.y < (_0x147baf.Function === 1 ? 120 : 300) && (_0x73cd4e.AutoFarm.angle = _0x4e4eb0(_0x147baf.Object, _0x5b5d3f), _0x73cd4e.AutoFarm.angle && (_0x53166f.WQU(_0x73cd4e.AutoFarm.angle), _0x53166f.WQT()));
-          } else {
-            let _0x3012c3 = {
-                'x': _0x5b5d3f.x - _0x73cd4e.AutoFarm.SX,
-                'y': _0x5b5d3f.y - _0x73cd4e.AutoFarm.SY
-              },
-              _0x41c9ee = {
-                'x': Math.abs(_0x5b5d3f.x - _0x73cd4e.AutoFarm.SX),
-                'y': Math.abs(_0x5b5d3f.y - _0x73cd4e.AutoFarm.SY)
-              },
-              _0x1a6b8b = 0;
-            _0x41c9ee.x > 30 && (_0x3012c3.x > 0 && (_0x1a6b8b += 1), _0x3012c3.x < 0 && (_0x1a6b8b += 2));
-            _0x41c9ee.y > 30 && (_0x3012c3.y > 0 && (_0x1a6b8b += 8), _0x3012c3.y < 0 && (_0x1a6b8b += 4));
-            (function (dir) {
-              const keys = {
-                1: 'a',
-                2: 'd',
-                4: 's',
-                8: 'w'
-              };
-              const keyCodes = {
-                1: 65,
-                2: 68,
-                4: 83,
-                8: 87
-              };
-
-              // Release all keys
-              ['w', 'a', 's', 'd'].forEach(k => {
-                const code = k.toUpperCase().charCodeAt(0);
-                const ev = new KeyboardEvent('keyup', {
-                  key: k,
-                  code: 'Key' + k.toUpperCase(),
-                  keyCode: code,
-                  which: code,
-                  bubbles: true,
-                  cancelable: true
-                });
-                window.dispatchEvent(ev);
-                document.dispatchEvent(ev);
-                document.body.dispatchEvent(ev);
-                document.documentElement.dispatchEvent(ev);
-              });
-              if (dir === 0) return;
-
-              // Press keys based on direction bitmask (inversé)
-              [1, 2, 4, 8].forEach(bit => {
-                if (dir & bit) {
-                  const k = keys[bit];
-                  const code = keyCodes[bit];
-                  const ev = new KeyboardEvent('keydown', {
-                    key: k,
-                    code: 'Key' + k.toUpperCase(),
-                    keyCode: code,
-                    which: code,
-                    bubbles: true,
-                    cancelable: true
-                  });
-                  window.dispatchEvent(ev);
-                  document.dispatchEvent(ev);
-                  document.body.dispatchEvent(ev);
-                  document.documentElement.dispatchEvent(ev);
-                }
-              });
-            })(_0x1a6b8b);
-            if (_0x2d4f1d) {
-              if (_0x3b2ae4.WUU.WUV[_0x44c140.PITCHFORK]) _0x5b5d3f.right !== _0x44c140.PITCHFORK && _0x53166f.WQR(_0x44c140.PITCHFORK);else _0x3b2ae4.WUU.WUV[_0x44c140.PITCHFORK2] && _0x5b5d3f.right !== _0x44c140.PITCHFORK2 && _0x53166f.WQR(_0x44c140.PITCHFORK2);
-              _0x73cd4e.AutoFarm.angle = _0x4e4eb0({
-                'x': _0x73cd4e.AutoFarm.SX,
-                'y': _0x73cd4e.AutoFarm.SY
-              }, _0x5b5d3f), _0x73cd4e.AutoFarm.angle && (_0x53166f.WQU(_0x73cd4e.AutoFarm.angle), _0x53166f.WQT());
-            }
-          }
+            return;
         }
-      }
-      function _0x822321() {
-        if (!_0x57f7e4.update || _0x46233c.WSJ.translate.y == 0 || _0x46233c.WSJ.translate.x == 0 || _0x53166f.websocket.readyState != 1) return;
-        if (_0x73cd4e.PathFinder.active) {
-          let _0x5ccb5f = gameWorld.fast_units[_0x57f7e4.uid];
-          if (!_0x5ccb5f) return;
-          _0x53166f.websocket.url.includes("experimental") && _0x3b2ae4.WUU.WUV[_0x44c140.BOAT] && _0x5ccb5f[_0x57f7e4.vehicle] != _0x44c140.BOAT && _0x53166f.WQR(_0x44c140.BOAT);
-          findpath({
-            'x': Math.round(_0x5ccb5f.x / 100),
-            'y': Math.round(_0x5ccb5f.y / 100)
-          }, _0x73cd4e.PathFinder.End);
-          let _0x484e93 = {
-            'x': _0x73cd4e.PathFinder.End.x * 100,
-            'y': _0x73cd4e.PathFinder.End.y * 100
-          };
-          _0x3e37f7(_0x5ccb5f, _0x484e93) < 1000 && lastChosenKit != -1 && _0x73cd4e.lastKit && chooseKit(lastChosenKit);
-          if (_0x73cd4e.PathFinder.inventory) {
-            if (_0x3e37f7(_0x5ccb5f, _0x484e93) < 300) for (let _0x16fb3c = 0; gameWorld.units[EntityIDs.CHEST].length > _0x16fb3c; _0x16fb3c++) {
-              for (let _0x4e36f8 = 0; _0x3b2ae4.WUU.WUV.length > _0x4e36f8; _0x4e36f8++) {
-                if (_0x3b2ae4.WUU.WUV[_0x4e36f8]) {
-                  if (_0x3e37f7(_0x5ccb5f, gameWorld.units[EntityIDs.CHEST][_0x16fb3c]) < 150) {
-                    gameWorld.units[EntityIDs.CHEST][_0x16fb3c].ally = _0x9cb2d9.id === gameWorld.units[EntityIDs.CHEST][_0x16fb3c][_0x57f7e4.pid] || _0x194c5e(gameWorld.units[EntityIDs.CHEST][_0x16fb3c][_0x57f7e4.pid]);
-                    if (gameWorld.units[EntityIDs.CHEST][_0x16fb3c].ally || !gameWorld.units[EntityIDs.CHEST][_0x16fb3c].lock) {
-                      gameWorld.units[EntityIDs.CHEST][_0x16fb3c][_0x57f7e4.iid] = gameWorld.units[EntityIDs.CHEST][_0x16fb3c].id, _0x53166f.WSW(gameWorld.units[EntityIDs.CHEST][_0x16fb3c], _0x4e36f8, 255);
-                      break;
+        window._lastAutoFarmState = true;
+
+        let _0x5b5d3f = world.fast_units[mapKeys.uid];
+        if (!_0x5b5d3f) return;
+
+        // 2. ЧТЕНИЕ СЕРВЕРНЫХ КООРДИНАТ
+        let myX = (_0x5b5d3f.r && _0x5b5d3f.r.x !== undefined) ? _0x5b5d3f.r.x : _0x5b5d3f.x;
+        let myY = (_0x5b5d3f.r && _0x5b5d3f.r.y !== undefined) ? _0x5b5d3f.r.y : _0x5b5d3f.y;
+
+        function sendSocketMove(dirCode) {
+            if (window._lastAutoFarmDir !== dirCode) {
+                window._lastAutoFarmDir = dirCode;
+                let sender = ws._originalSend || ws.send;
+                try { sender.call(ws, new Uint8Array([37, dirCode])); } catch(e) {}
+            }
+        }
+
+        function equipItem(itemId) {
+            if (_0x5b5d3f.right !== itemId) {
+                // Если штатная функция сломалась после реконнекта, шлем пакет напрямую
+                if (typeof sockInst.WQR === 'function') sockInst.WQR(itemId);
+                else {
+                    let sender = ws._originalSend || ws.send;
+                    try { sender.call(ws, "[6," + itemId + "]"); } catch(e) {}
+                }
+            }
+        }
+
+        // Оптимизированный поиск грядок без создания огромных массивов
+        let targetSeed = null;
+        let minTargetDistSq = Infinity;
+        
+        let areaX = conf.AutoFarm.TLX;
+        let areaY = conf.AutoFarm.TLY;
+        let areaW = conf.AutoFarm.BRX - conf.AutoFarm.TLX;
+        let areaH = conf.AutoFarm.BRY - conf.AutoFarm.TLY;
+
+        // Массив ID грядок
+        let seedTypes = [
+            EntityIDs.SEED, EntityIDs.PUMPKIN_SEED, EntityIDs.GARLIC_SEED, 
+            EntityIDs.THORNBUSH_SEED, EntityIDs.CARROT_SEED, EntityIDs.TOMATO_SEED, 
+            EntityIDs.WATERMELON_SEED, EntityIDs.ALOE_VERA_SEED, EntityIDs.WHEAT_SEED
+        ];
+
+        for (let t = 0; t < seedTypes.length; t++) {
+            let seeds = world.units[seedTypes[t]];
+            if (!seeds) continue;
+            
+            for (let i = 0; i < seeds.length; i++) {
+                let seed = seeds[i];
+                if (!seed || !seed.info || seed.info === 10) continue;
+                if (!userInst.WUU.WUV[_0x44c140.WATERING_CAN_FULL] && seed.info === 16) continue;
+                
+                let objX = (seed.r && seed.r.x !== undefined) ? seed.r.x : seed.x;
+                let objY = (seed.r && seed.r.y !== undefined) ? seed.r.y : seed.y;
+
+                if (objX >= areaX && objX <= areaX + areaW && objY >= areaY && objY <= areaY + areaH) {
+                    let dx = myX - objX;
+                    let dy = myY - objY;
+                    let distSq = dx * dx + dy * dy; // Быстрее чем Math.hypot
+
+                    if (distSq < minTargetDistSq) {
+                        minTargetDistSq = distSq;
+                        targetSeed = seed;
                     }
-                  }
                 }
-              }
             }
+        }
+
+        let isExperimental = userInst.WSJ.WUM + (1 - userInst.WSJ.WUS) <= 0.1 && ws.url.includes("experimental");
+
+        function forceFaceAngle(targetAngle) {
+            if (targetAngle == null) return;
+            conf.AutoFarm.angle = targetAngle;
+            
+            _0x5b5d3f.angle = targetAngle;
+            if (typeof _0x5b5d3f[mapKeys.nangle] !== 'undefined') {
+                _0x5b5d3f[mapKeys.nangle] = targetAngle;
+            }
+            if (typeof sockInst.WQU === 'function') sockInst.WQU(targetAngle); 
+        }
+
+        // 3. ЛОГИКА РАБОТЫ (ХП > 80%)
+        if (targetSeed && Math.floor(userInst.WSJ.WUN * 100) > 80 && !isExperimental) {
+          
+          let objX = (targetSeed.r && targetSeed.r.x !== undefined) ? targetSeed.r.x : targetSeed.x;
+          let objY = (targetSeed.r && targetSeed.r.y !== undefined) ? targetSeed.r.y : targetSeed.y;
+
+          // Экипировка
+          switch (targetSeed.info) {
+            case 16: case 17: case 18: case 19:
+              if (userInst.WUU.WUV[_0x44c140.WATERING_CAN_FULL]) {
+                  equipItem(_0x44c140.WATERING_CAN_FULL);
+              } else {
+                  if (userInst.WUU.WUV[_0x44c140.PITCHFORK]) equipItem(_0x44c140.PITCHFORK);
+                  else if (userInst.WUU.WUV[_0x44c140.PITCHFORK2]) equipItem(_0x44c140.PITCHFORK2);
+              }
+              break;
+            case 1: case 2: case 3:
+              if (userInst.WUU.WUV[_0x44c140.PITCHFORK]) equipItem(_0x44c140.PITCHFORK);
+              else if (userInst.WUU.WUV[_0x44c140.PITCHFORK2]) equipItem(_0x44c140.PITCHFORK2);
+              break;
           }
+
+          let targetAngle = Math.atan2(objY - myY, objX - myX);
+
+          // 7225 это 85 в квадрате (идеальная дистанция)
+          if (minTargetDistSq <= 7225) {
+              sendSocketMove(0); 
+              forceFaceAngle(targetAngle); 
+              
+              if (typeof sockInst.WQT === 'function') sockInst.WQT(); 
+              else {
+                  // Прямой пакет удара, если WQT сломался
+                  let sender = ws._originalSend || ws.send;
+                  try { sender.call(ws, "[7,1]"); } catch(e) {}
+              }
+          } else {
+              // Бежим к цели
+              let diffX = myX - objX;
+              let diffY = myY - objY;
+              let dirCode = 0;
+
+              if (Math.abs(diffX) > 40) dirCode |= (diffX > 0 ? 1 : 2);
+              if (Math.abs(diffY) > 40) dirCode |= (diffY > 0 ? 8 : 4);
+
+              // Анти-застревание
+              if (dirCode === 0) {
+                window._autoFarmStuckCounter = (window._autoFarmStuckCounter || 0) + 1;
+                if (window._autoFarmStuckCounter >= 5) {
+                  const stuckDirs = [1, 2, 4, 8];
+                  dirCode |= stuckDirs[Math.floor(Math.random() * 4)];
+                  window._autoFarmStuckCounter = 0;
+                }
+              } else {
+                  window._autoFarmStuckCounter = 0;
+              }
+
+              sendSocketMove(dirCode);
+              forceFaceAngle(targetAngle);
+          }
+        } else {
+          // --- ВОЗВРАТ ДОМОЙ ---
+          let homeX = conf.AutoFarm.SX;
+          let homeY = conf.AutoFarm.SY;
+          
+          let dx = myX - homeX;
+          let dy = myY - homeY;
+          let distSqToHome = dx * dx + dy * dy;
+          let dirCode = 0;
+
+          if (distSqToHome > 900) { // 30^2
+              if (Math.abs(dx) > 15) dirCode |= (dx > 0 ? 1 : 2);
+              if (Math.abs(dy) > 15) dirCode |= (dy > 0 ? 8 : 4);
+          }
+
+          sendSocketMove(dirCode);
+
+          if (isExperimental) {
+              if (userInst.WUU.WUV[_0x44c140.PITCHFORK]) equipItem(_0x44c140.PITCHFORK);
+              else if (userInst.WUU.WUV[_0x44c140.PITCHFORK2]) equipItem(_0x44c140.PITCHFORK2);
+          }
+          
+          let homeAngle = Math.atan2(homeY - myY, homeX - myX);
+          forceFaceAngle(homeAngle);
         }
       }
-      function _0xa9a345() {
-        if (!_0x57f7e4.update || _0x46233c.WSJ.translate.y == 0 || _0x46233c.WSJ.translate.x == 0 || _0x53166f.websocket.readyState != 1) return;
-        if (_0x73cd4e.AutoEmerald.active) {
-          let _0x557944 = gameWorld.fast_units[_0x57f7e4.uid];
-          if (!_0x557944) return;
-          let _0x4ac6bf = ![];
-          _0x53166f.websocket.url.includes('experimental') ? _0x4ac6bf = [[28750, 3018], [29563, 3273], [29519, 2750]] : _0x4ac6bf = [[21550, 29718], [21963, 29773], [21919, 29350]];
-          if (!_0x4ac6bf) return;
-          let _0xc8a5be = {
-              'x': _0x4ac6bf[_0x13a394][0],
-              'y': _0x4ac6bf[_0x13a394][1]
-            },
-            _0x2b927b = {
-              'x': _0x557944.x - _0xc8a5be.x,
-              'y': _0x557944.y - _0xc8a5be.y
-            },
-            _0xef7e3f = {
-              'x': Math.abs(_0x557944.x - _0xc8a5be.x),
-              'y': Math.abs(_0x557944.y - _0xc8a5be.y)
-            },
-            _0x34fc58 = 0;
-          _0xef7e3f.x > 60 && (_0x2b927b.x > 0 && (_0x34fc58 += 1), _0x2b927b.x < 0 && (_0x34fc58 += 2));
-          _0xef7e3f.y > 60 && (_0x2b927b.y > 0 && (_0x34fc58 += 8), _0x2b927b.y < 0 && (_0x34fc58 += 4));
-          (function (dir) {
-            const keys = {
-              1: 'a',
-              2: 'd',
-              4: 's',
-              8: 'w'
-            };
-            const keyCodes = {
-              1: 65,
-              2: 68,
-              4: 83,
-              8: 87
-            };
 
-            // Release all keys
-            ['w', 'a', 's', 'd'].forEach(k => {
-              const code = k.toUpperCase().charCodeAt(0);
-              const ev = new KeyboardEvent('keyup', {
-                key: k,
-                code: 'Key' + k.toUpperCase(),
-                keyCode: code,
-                which: code,
-                bubbles: true,
-                cancelable: true
-              });
-              window.dispatchEvent(ev);
-              document.dispatchEvent(ev);
-              document.body.dispatchEvent(ev);
-              document.documentElement.dispatchEvent(ev);
-            });
-            if (dir === 0) return;
+      // === АВТОНОМНЫЙ WEB WORKER ===
+      window._lastAutoFarmDir = -1;
+      window._lastAutoFarmState = false;
+      
+      (function() {
+          const autoFarmWorkerCode = `
+              setInterval(() => {
+                  postMessage('autofarm_tick');
+              }, 100);
+          `;
+          const blob = new Blob([autoFarmWorkerCode], { type: 'application/javascript' });
+          const autoFarmWorker = new Worker(URL.createObjectURL(blob));
 
-            // Press keys based on direction bitmask (inversé)
-            [1, 2, 4, 8].forEach(bit => {
-              if (dir & bit) {
-                const k = keys[bit];
-                const code = keyCodes[bit];
-                const ev = new KeyboardEvent('keydown', {
-                  key: k,
-                  code: 'Key' + k.toUpperCase(),
-                  keyCode: code,
-                  which: code,
-                  bubbles: true,
-                  cancelable: true
-                });
-                window.dispatchEvent(ev);
-                document.dispatchEvent(ev);
-                document.body.dispatchEvent(ev);
-                document.documentElement.dispatchEvent(ev);
+          autoFarmWorker.onmessage = function(e) {
+              if (e.data === 'autofarm_tick') {
+                  try {
+                      if (typeof _0x55cfc7 === 'function') {
+                          _0x55cfc7();
+                      }
+                  } catch (err) {}
               }
-            });
-          })(_0x34fc58);
-          if (_0xef7e3f.x < 100 && _0xef7e3f.y < 100) {
-            let _0x4a7428 = 0;
-            switch (_0x13a394) {
-              case 0:
-                _0x53166f.WQU(_0x4a7428 = -3.683671385973914);
-                break;
-              case 1:
-                _0x53166f.WQU(_0x4a7428 = -5.2852676407451815);
-                break;
-              case 2:
-                _0x53166f.WQU(_0x4a7428 = -0.948637781672212);
-                break;
+          };
+      })();
+      // =====================================================================
+// --- AUTO FOOD & WATER (ОПТИМИЗИРОВАНО + WEB WORKER + RECONNECT SAFE) ---
+// =====================================================================
+(function() {
+    // Включатель (можно привязать к галочке в меню)
+    window._arctAutoFoodEnabled = true; 
+
+    // Список еды по приоритету и ID бутылки с водой
+    const foodIds = [208, 207, 238, 236, 229, 226, 319, 317, 315, 294, 291, 201]; 
+    const waterBottleId = 218; 
+
+    function autoFoodTick() {
+        if (!window._arctAutoFoodEnabled) return;
+
+        // Динамическое получение ссылок (защита от реконнектов)
+        let sock = window.v2600 || window._0x53166f;
+        let userInst = window.v2604 || window._0x3b2ae4;
+
+        if (!sock || !sock.websocket || sock.websocket.readyState !== 1 || !userInst || !userInst.WSJ || !userInst.WUU) return;
+
+        let inv = userInst.WUU.WUV;
+        let wsj = userInst.WSJ;
+        if (!inv) return;
+
+        let ws = sock.websocket;
+        let sender = ws._originalSend || ws.send;
+
+        // WUO - Голод, WUP - Жажда. Умножаем на 100 для получения процентов (0-100)
+        let currentFood = wsj.WUO !== undefined ? (wsj.WUO * 100) : 100;
+        let currentWater = wsj.WUP !== undefined ? (wsj.WUP * 100) : 100;
+
+        let actionTaken = false;
+
+        // --- ЛОГИКА ЕДЫ (< 40%) ---
+        if (currentFood < 40) {
+            for (let i = 0; i < foodIds.length; i++) {
+                let id = foodIds[i];
+                let itemData = inv[id];
+                let count = typeof itemData === 'number' ? itemData : (itemData ? (itemData.n ?? itemData.count ?? 0) : 0);
+                
+                if (count > 0) {
+                    try { sender.call(ws, "[6," + id + "]"); } catch(e) {}
+                    actionTaken = true;
+                    break; // Съедаем только 1 предмет за тик, чтобы не получить кик за спам
+                }
             }
-            _0x53166f.WQT(), _0x73cd4e.AutoEmerald.angle = _0x4a7428;
-          }
         }
-      }
-      let _0x4f9ddb = ![],
-        _0x6f80b1 = Date.now();
+
+        // --- ЛОГИКА ВОДЫ (< 40%) ---
+        // Пьем воду, только если в этот тик мы не ели (опять же, защита от спама пакетами)
+        if (!actionTaken && currentWater < 40) {
+            let waterData = inv[waterBottleId];
+            let wCount = typeof waterData === 'number' ? waterData : (waterData ? (waterData.n ?? waterData.count ?? 0) : 0);
+            
+            if (wCount > 0) {
+                try { sender.call(ws, "[6," + waterBottleId + "]"); } catch(e) {}
+            }
+        }
+    }
+
+    // --- WEB WORKER (НЕСПАДАЮЩИЙ ТАЙМЕР ДЛЯ ФОНОВОГО РЕЖИМА) ---
+    const workerCode = `
+        setInterval(() => {
+            postMessage('tick');
+        }, 250); // Тикает 4 раза в секунду
+    `;
+    
+    const blob = new Blob([workerCode], { type: 'application/javascript' });
+    const autoFoodWorker = new Worker(URL.createObjectURL(blob));
+
+    autoFoodWorker.onmessage = function(e) {
+        if (e.data === 'tick') {
+            try { autoFoodTick(); } catch (err) {}
+        }
+    };
+})();
+    
+      
       function _0x526c43() {
         if (!_0x57f7e4.update || _0x46233c.WSJ.translate.y == 0 || _0x46233c.WSJ.translate.x == 0 || _0x53166f.websocket.readyState != 1) return;
         if (_0x73cd4e.AutoLand.active) {
@@ -8065,17 +7933,57 @@ function _0x470946() {
           }
         }
       }
-      function _0x473864() {
-        if (_0x73cd4e.AutoFurnace.active) {
-          if (!_0x57f7e4.update || _0x46233c.WSJ.translate.y == 0 || _0x46233c.WSJ.translate.x == 0 || _0x53166f.websocket.readyState != 1) return;
-          let _0x52eb82 = gameWorld.fast_units[_0x57f7e4.uid];
-          if (!_0x52eb82) return;
-          let _0x3194c8 = gameWorld.units[EntityIDs.FURNACE];
-          if (_0x3194c8.length) for (let _0xf5da6b = 0; _0xf5da6b < _0x3194c8.length; _0xf5da6b++) {
-            _0x3e37f7(_0x3194c8[_0xf5da6b], _0x52eb82) <= 150 && (_0x3194c8[_0xf5da6b][_0x57f7e4.iid] = _0x3194c8[_0xf5da6b].id, _0x53166f.WSV(_0x3194c8[_0xf5da6b], 255));
-          }
+      let autoFurnaceInterval = null;
+
+    function _0x473864() {
+        let conf = typeof _0x73cd4e !== 'undefined' ? _0x73cd4e : window.arctConfig;
+        
+        // Если функция выключена в конфиге — чистим интервал и выходим
+        if (!conf || !conf.AutoFurnace || !conf.AutoFurnace.active) {
+            if (autoFurnaceInterval) {
+                clearInterval(autoFurnaceInterval);
+                autoFurnaceInterval = null;
+            }
+            return;
         }
-      }
+
+        // Если уже запущен цикл спама — не плодим новые таймеры
+        if (autoFurnaceInterval) return;
+
+        // Запускаем постоянный спам пока активно
+        autoFurnaceInterval = setInterval(() => {
+            let currentConf = typeof _0x73cd4e !== 'undefined' ? _0x73cd4e : window.arctConfig;
+            if (!currentConf || !currentConf.AutoFurnace || !currentConf.AutoFurnace.active) {
+                clearInterval(autoFurnaceInterval);
+                autoFurnaceInterval = null;
+                return;
+            }
+
+            if (!_0x57f7e4.update || _0x46233c.WSJ.translate.y == 0 || _0x46233c.WSJ.translate.x == 0 || _0x53166f.websocket.readyState != 1) return;
+            let _0x52eb82 = gameWorld.fast_units[_0x57f7e4.uid];
+            if (!_0x52eb82) return;
+            
+            let _0x3194c8 = gameWorld.units[EntityIDs.FURNACE];
+            if (_0x3194c8 && _0x3194c8.length) {
+                let originalSend = _0x53166f.websocket._originalSend || _0x53166f.websocket.send;
+                for (let _0xf5da6b = 0; _0xf5da6b < _0x3194c8.length; _0xf5da6b++) {
+                    let furnace = _0x3194c8[_0xf5da6b];
+                    // Проверяем дистанцию (150 пикселей)
+                    if (_0x3e37f7(furnace, _0x52eb82) <= 150) {
+                        let iid = furnace.id;
+                        let pid = furnace.pid ?? furnace.playerId ?? furnace[_0x57f7e4?.pid];
+                        
+                        if (iid !== undefined && pid !== undefined) {
+                            try {
+                                // Спамим твой пакет каждые 100мс пока печка рядом и функция включена
+                                originalSend.call(_0x53166f.websocket, JSON.stringify([31, 255, pid, iid]));
+                            } catch(e) {}
+                        }
+                    }
+                }
+            }
+        }, 100); // Скорость спама: каждые 100 миллисекунд (можешь уменьшить до 50 для более агрессивного спама)
+    }
       function _0x1a822c() {
         if (_0x73cd4e.AutoTame.active) {
           if (!_0x57f7e4.update || _0x46233c.WSJ.translate.y == 0 || _0x46233c.WSJ.translate.x == 0 || _0x53166f.websocket.readyState != 1) return;
@@ -8106,6 +8014,7 @@ function _0x470946() {
           if (_0x1abceb) {
             _0x3dc58e.ally = _0x9cb2d9.id === _0x3dc58e[_0x57f7e4.pid] || _0x194c5e(_0x3dc58e[_0x57f7e4.pid]);
             if (!_0x3dc58e.ally && _0x3dc58e.lock) {
+              
               if (_0x1abceb && _0x3e37f7(_0x1abceb, _0x3dc58e) < 300 && !_0x3b2ae4.WUZ.WVA && _0x3b2ae4.WUU.WUV[_0x44c140.LOCKPICK]) {
                 if (!_0x57f7e4.update || _0x46233c.WSJ.translate.y == 0 || _0x46233c.WSJ.translate.x == 0 || _0x53166f.websocket.readyState != 1) return;
                 _0x3dc58e[_0x57f7e4.iid] = _0x3dc58e.id, _0x53166f.WQA(_0x3dc58e);
@@ -8128,11 +8037,95 @@ function _0x470946() {
       function _0xb4d368(_0x6de8c) {
         _0x140275(), requestAnimationFrame(_0xb4d368), _0xcdfe98 = (_0x6de8c - _0x14191c) / 1000, _0x14191c = _0x6de8c, _0xcdfe98 = _0xcdfe98 > 1 ? 1 : _0xcdfe98;
         Date.now() - _0x2d957a > 1000 && (_0x2d957a = Date.now(), _0x3f754d = Math.round(1 / _0xcdfe98) + " FPS");
+        
         if (_0x159901) {
-          if (!_0x57f7e4.update || _0x46233c.WSJ.translate.y == 0 || _0x46233c.WSJ.translate.x == 0 || _0x53166f.websocket.readyState != 1) return;
+          if (!_0x57f7e4.update || _0x46233c.WSJ.translate.y == 0 || _0x46233c.WSJ.translate.x == 0 || !_0x53166f || _0x53166f.websocket.readyState != 1) return;
           let _0x26b564 = gameWorld.fast_units[_0x57f7e4.uid];
-          _0x40b9f1 && ((_0x29e555.KeyS || _0x29e555.ArrowDown) && (_0x3b2ae4.WUF.y -= Number(_0x73cd4e.Spectator.speed)), (_0x29e555.KeyW || _0x29e555.ArrowUp) && (_0x3b2ae4.WUF.y += Number(_0x73cd4e.Spectator.speed)), (_0x29e555.KeyD || _0x29e555.ArrowRight) && (_0x3b2ae4.WUF.x -= Number(_0x73cd4e.Spectator.speed)), (_0x29e555.KeyA || _0x29e555.ArrowLeft) && (_0x3b2ae4.WUF.x += Number(_0x73cd4e.Spectator.speed)));
-          if (!_0x26b564 && !_0x40b9f1 && !_0x708bf1) _0x708bf1 = !![], _0x53166f.WSG();else _0x708bf1 && _0x26b564 && !_0x40b9f1 && (_0x708bf1 = ![]);
+
+          // 1. АКТУАЛИЗИРУЕМ СТАТУС СПЕКТАТОРА ДЛЯ СОКЕТА
+          window._isSpecActive = _0x40b9f1;
+
+          // 2. БЕЗОПАСНЫЙ ХУК СОКЕТА (Отключает только пакеты ходьбы ID 37)
+          try {
+              if (!_0x53166f.websocket._specHooked) {
+                  let origSend = _0x53166f.websocket.send;
+                  _0x53166f.websocket.send = function(data) {
+                      try {
+                          if (window._isSpecActive) {
+                              if (typeof data === 'string' && data.startsWith('[37,')) return;
+                              if (data instanceof Uint8Array && data[0] === 37) return;
+                              if (data instanceof ArrayBuffer && new Uint8Array(data)[0] === 37) return;
+                              if (Array.isArray(data) && data[0] === 37) return;
+                          }
+                      } catch (e) {} // Если пакет нестандартный, просто пропускаем
+                      return origSend.apply(this, arguments);
+                  };
+                  _0x53166f.websocket._specHooked = true;
+              }
+          } catch(e) {}
+
+          // 3. БЕЗОПАСНЫЙ ХУК КАМЕРЫ С АВТО-ФОЛЛБЕКОМ
+          if (window._camState === undefined) {
+              window._camState = 0; // 0 = не пробовали, 1 = успешно подменили, 2 = ошибка доступа
+              let searchSpaces = [_0x3b2ae4, gameWorld];
+              
+              for (let i = 0; i < searchSpaces.length; i++) {
+                  if (!searchSpaces[i]) continue;
+                  for (let k in searchSpaces[i]) {
+                      try {
+                          let obj = searchSpaces[i][k];
+                          if (obj && typeof obj === 'object' && 'rx' in obj && 'ry' in obj && 'x' in obj && 'y' in obj && 'w' in obj) {
+                              window._kubasCam = obj;
+                              let realX = obj.x;
+                              let realY = obj.y;
+                              window._specX = realX;
+                              window._specY = realY;
+
+                              Object.defineProperty(obj, 'x', {
+                                  get: () => window._isSpecActive ? window._specX : realX,
+                                  set: (v) => { realX = v; if(!window._isSpecActive) window._specX = v; },
+                                  configurable: true
+                              });
+                              Object.defineProperty(obj, 'y', {
+                                  get: () => window._isSpecActive ? window._specY : realY,
+                                  set: (v) => { realY = v; if(!window._isSpecActive) window._specY = v; },
+                                  configurable: true
+                              });
+                              window._camState = 1;
+                              break;
+                          }
+                      } catch(e) {
+                          // Если игра кинула ошибку (Cannot redefine property) - переходим к запасному плану
+                          window._camState = 2; 
+                      }
+                  }
+                  if (window._camState !== 0) break;
+              }
+              if (window._camState === 0) window._camState = 2; // Если не нашли камеру - тоже запасной план
+          }
+
+          // 4. ДВИЖЕНИЕ КАМЕРЫ (С учетом инверсии осей)
+          if (_0x40b9f1) {
+              let speed = Number(_0x73cd4e.Spectator.speed);
+              
+              if (window._camState === 1 && window._kubasCam) {
+                  // А. Плавный метод (если игра разрешила)
+                  if (_0x29e555.KeyS || _0x29e555.ArrowDown) window._specY -= speed;
+                  if (_0x29e555.KeyW || _0x29e555.ArrowUp) window._specY += speed;
+                  if (_0x29e555.KeyD || _0x29e555.ArrowRight) window._specX -= speed;
+                  if (_0x29e555.KeyA || _0x29e555.ArrowLeft) window._specX += speed;
+              } else {
+                  // Б. Твой старый метод (если игра заблокировала объекты)
+                  if (_0x29e555.KeyS || _0x29e555.ArrowDown) _0x3b2ae4.WUF.y -= speed;
+                  if (_0x29e555.KeyW || _0x29e555.ArrowUp) _0x3b2ae4.WUF.y += speed;
+                  if (_0x29e555.KeyD || _0x29e555.ArrowRight) _0x3b2ae4.WUF.x -= speed;
+                  if (_0x29e555.KeyA || _0x29e555.ArrowLeft) _0x3b2ae4.WUF.x += speed;
+              }
+          }
+
+          // 5. ОРИГИНАЛЬНАЯ ЛОГИКА СПАВНА
+          if (!_0x26b564 && !_0x40b9f1 && !_0x708bf1) _0x708bf1 = !![], _0x53166f.WSG();
+          else _0x708bf1 && _0x26b564 && !_0x40b9f1 && (_0x708bf1 = ![]);
         }
       }
       function _0x3416f0() {
@@ -8150,10 +8143,10 @@ function _0x470946() {
           _0x29e555[_0x3137fd.code] = 1;
           if (!_0x2be69a()) {
             if (!_0x57f7e4.update || _0x46233c.WSJ.translate.y == 0 || _0x46233c.WSJ.translate.x == 0 || _0x53166f.websocket.readyState != 1) return;
-            if (_0x3137fd.code === _0x73cd4e.DropSword.bind) {
-              let _0x3349ac = gameWorld.fast_units[_0x57f7e4.uid];
-              _0x3349ac && _0x57c289(_0x3349ac.right) && _0x53166f.WQS(_0x3349ac.right);
-            }
+           if (_0x3137fd.code === _0x73cd4e.DropSword.bind) {
+    let _0x3349ac = gameWorld.fast_units[_0x57f7e4.uid];
+    _0x3349ac && _0x57c289(_0x3349ac.right) && _0x53166f.websocket.send(JSON.stringify([2, _0x3349ac.right]));
+}
             _0x3137fd.code == _0x73cd4e.Spectator.bind && (_0x40b9f1 = !_0x40b9f1), _0x3137fd.code === _0x73cd4e.SmartCraft.bind && (!_0x73cd4e.SmartCraft.active ? (_0x73cd4e.SmartCraft.active = !_0x73cd4e.SmartCraft.active, _0x2120c9()) : _0x73cd4e.SmartCraft.active = !_0x73cd4e.SmartCraft.active, _0xa896c1.saveSettings()), _0x3137fd.code === _0x73cd4e.AutoTotem.bind && (!_0x73cd4e.AutoTotem.active ? (_0x73cd4e.AutoTotem.active = !_0x73cd4e.AutoTotem.active, _0x18210d()) : _0x73cd4e.AutoTotem.active = !_0x73cd4e.AutoTotem.active, _0xa896c1.saveSettings()), _0x3137fd.code === _0x73cd4e.AutoCrown.bind && (!_0x73cd4e.AutoCrown.active ? (_0x73cd4e.AutoCrown.active = !![], _0x6ad0dd()) : _0x73cd4e.AutoCrown.active = !![], _0xa896c1.saveSettings()), _0x3137fd.code === _0x73cd4e.AutoSpike.bind && (!_0x73cd4e.AutoSpike.active ? (_0x73cd4e.AutoSpike.active = !![], _0x575045()) : _0x73cd4e.AutoSpike.active = !![], _0xa896c1.saveSettings()), _0x3137fd.code === _0x73cd4e.AutoFire.bind && (!_0x73cd4e.AutoFire.active ? (_0x73cd4e.AutoFire.active = !![], _0x5145fc()) : _0x73cd4e.AutoFire.active = !![], _0xa896c1.saveSettings()), _0x3137fd.code === _0x73cd4e.AutoWall.bind && (!_0x73cd4e.AutoWall.active ? (_0x73cd4e.AutoWall.active = !![], _0x10d518()) : _0x73cd4e.AutoWall.active = !![], _0xa896c1.saveSettings()), _0x3137fd.code === _0x73cd4e.AutoSteal.bind && (!_0x73cd4e.AutoSteal.active ? (_0x73cd4e.AutoSteal.active = !![], _0x1f1430()) : _0x73cd4e.AutoSteal.active = !![], _0xa896c1.saveSettings()), _0x3137fd.code === _0x73cd4e.ZmaRedGold.bind && (!_0x73cd4e.ZmaRedGold.active ? (_0x73cd4e.ZmaRedGold.active = !![], _0x11f4e2()) : _0x73cd4e.ZmaRedGold.active = !![], _0xa896c1.saveSettings()), _0x3137fd.code === _0x73cd4e.AutoCraft.bind && (!_0x73cd4e.AutoCraft.active ? (_0x73cd4e.AutoCraft.active = !_0x73cd4e.AutoCraft.active, _0x36d541()) : _0x73cd4e.AutoCraft.active = !_0x73cd4e.AutoCraft.active, _0xa896c1.saveSettings()), _0x3137fd.code === _0x73cd4e.AutoRecycle.bind && (!_0x73cd4e.AutoRecycle.active ? (_0x73cd4e.AutoRecycle.active = !_0x73cd4e.AutoRecycle.active, _0x7673b7()) : _0x73cd4e.AutoRecycle.active = !_0x73cd4e.AutoRecycle.active, _0xa896c1.saveSettings()), _0x3137fd.code === _0x73cd4e.AutoExtTake.bind && (!_0x73cd4e.AutoExtTake.active ? (_0x73cd4e.AutoExtTake.active = !_0x73cd4e.AutoExtTake.active, _0x470946()) : _0x73cd4e.AutoExtTake.active = !_0x73cd4e.AutoExtTake.active, _0xa896c1.saveSettings()), _0x3137fd.code === _0x73cd4e.AutoExtPut.bind && (!_0x73cd4e.AutoExtPut.active ? (_0x73cd4e.AutoExtPut.active = !_0x73cd4e.AutoExtPut.active, _0x470946()) : _0x73cd4e.AutoExtPut.active = !_0x73cd4e.AutoExtPut.active, _0xa896c1.saveSettings()), _0x3137fd.code === _0x73cd4e.AutoBreadTake.bind && (!_0x73cd4e.AutoBreadTake.active ? (_0x73cd4e.AutoBreadTake.active = !_0x73cd4e.AutoBreadTake.active, _0xa17fac()) : _0x73cd4e.AutoBreadTake.active = !_0x73cd4e.AutoBreadTake.active, _0xa896c1.saveSettings()), _0x3137fd.code === _0x73cd4e.AutoBreadPut.bind && (!_0x73cd4e.AutoBreadPut.active ? (_0x73cd4e.AutoBreadPut.active = !_0x73cd4e.AutoBreadPut.active, _0xa17fac()) : _0x73cd4e.AutoBreadPut.active = !_0x73cd4e.AutoBreadPut.active, _0xa896c1.saveSettings()), _0x3137fd.code === _0x73cd4e.AutoBuild.bind && (!_0x73cd4e.AutoBuild.active ? (_0x73cd4e.AutoBuild.active = !_0x73cd4e.AutoBuild.active, _0x58b203()) : _0x73cd4e.AutoBuild.active = !_0x73cd4e.AutoBuild.active, _0xa896c1.saveSettings()), _0x3137fd.code === _0x73cd4e.Aimbot.bind && (!_0x73cd4e.Aimbot.active ? (_0x73cd4e.Aimbot.active = !_0x73cd4e.Aimbot.active, _0x63023()) : _0x73cd4e.Aimbot.active = !_0x73cd4e.Aimbot.active, _0xa896c1.saveSettings()), _0x3137fd.code === _0x73cd4e.AutoFarm.bind && (!_0x73cd4e.AutoFarm.active ? (_0x73cd4e.AutoFarm.active = !_0x73cd4e.AutoFarm.active, _0x55cfc7()) : _0x73cd4e.AutoFarm.active = !_0x73cd4e.AutoFarm.active, _0xa896c1.saveSettings()), _0x3137fd.code === _0x73cd4e.PathFinder.bind && (!_0x73cd4e.PathFinder.active ? (_0x73cd4e.PathFinder.active = !_0x73cd4e.PathFinder.active, _0x822321()) : _0x73cd4e.PathFinder.active = !_0x73cd4e.PathFinder.active, _0xa896c1.saveSettings()), _0x3137fd.code === _0x73cd4e.AutoEmerald.bind && (!_0x73cd4e.AutoEmerald.active ? (_0x73cd4e.AutoEmerald.active = !_0x73cd4e.AutoEmerald.active, _0xa9a345()) : _0x73cd4e.AutoEmerald.active = !_0x73cd4e.AutoEmerald.active, _0xa896c1.saveSettings()), _0x3137fd.code === _0x73cd4e.AutoTame.bind && (!_0x73cd4e.AutoTame.active ? (_0x73cd4e.AutoTame.active = !_0x73cd4e.AutoTame.active, _0x1a822c()) : _0x73cd4e.AutoTame.active = !_0x73cd4e.AutoTame.active, _0xa896c1.saveSettings()), _0x3137fd.code === _0x73cd4e.AutoFurnace.bind && (!_0x73cd4e.AutoFurnace.active ? (_0x73cd4e.AutoFurnace.active = !_0x73cd4e.AutoFurnace.active, _0x473864()) : _0x73cd4e.AutoFurnace.active = !_0x73cd4e.AutoFurnace.active, _0xa896c1.saveSettings()), _0x3137fd.code === _0x73cd4e.Xray.bind && (_0x73cd4e.Xray.active = !_0x73cd4e.Xray.active);
           }
         }), document.addEventListener('keyup', function (_0x49e1fb) {
@@ -8191,26 +8184,7 @@ function _0x470946() {
                 !_0x40e32d && (_0x40e32d = !![], f519(_0x525c9f[1]));
                 ;
                 break;
-              case 5:
-                switch (_0x525c9f[1]) {
-                  case 0:
-                    _0x12a87d("red", "❌ Token Holder server is offline! ❌");
-                    break;
-                  case 1:
-                    _0x12a87d('orange', "⚠️ You have reached your maximum holds! ⚠️");
-                    break;
-                  case 2:
-                    _0x12a87d('green', "✅ Token accepted! ✅");
-                    break;
-                  case 3:
-                    _0x12a87d('red', "❌ Token declined! ❌");
-                    break;
-                  case 4:
-                    _0x12a87d("red", "❌ Please set the autofarm top/bottom/safe positions! ❌");
-                    break;
-                }
-                ;
-                break;
+              
               case 69:
                 _0x59cdca = !![];
                 break;
@@ -8436,13 +8410,13 @@ function _0x3f91() {
     "DropSword Key:",
     "WQQ",
     "ColoredSpikes",
-    "tokenHolder.autocraft",
+    
     "PathFinder.inventory",
     "options",
     "WQW",
     "build",
     "guiConfig",
-    "tokenHolder.craftId",
+    
     "Auto Farm Settings",
     "Wheat Seed",
     "https://raw.githubusercontent.com/shwtdev/Void_V6/refs/heads/main/72.png",
@@ -8499,7 +8473,7 @@ function _0x3f91() {
     "SEED",
     "add",
     "start",
-    "tokenHolder.recycleId",
+    
     "bezierCurveTo",
     "Craft Amount",
     "SWORD_WOOD",
@@ -8717,13 +8691,13 @@ function _0x3f91() {
     "function(data){let ui16=new Uint16Array(data);hiddenUser.cam.change(ui16[1],ui16[2]);}",
     "German",
     "Distance",
-    "Sending request to Token Holder!",
+  
     "OCELOT",
     "pointer",
     "WSO",
     "Hidden",
     "0px 8px",
-    "❌ Token Holder server is offline! ❌",
+    
     "every",
     "WILD_WHEAT",
     "click",
@@ -8751,7 +8725,7 @@ function _0x3f91() {
     "20%",
     "onclose",
     "fod",
-    "tokenHolder.autofarm",
+    ,
     "AutoFarm.TLX",
     "heigh",
     "input[type=\"range\"][id=\"",
@@ -8779,7 +8753,7 @@ function _0x3f91() {
     "ArrayExpression",
     "Compressing Nodes...",
     "Crabs",
-    "tokenHolder",
+    
     "saveSettings",
     "position",
     "Failed To Bind Spike Drawing",
@@ -8999,7 +8973,7 @@ function _0x3f91() {
     "Height:",
     "Extractor Put Key:",
     "https://raw.githubusercontent.com/shwtdev/Void_V6/refs/heads/main/30.png",
-    "tokenHolder.autorecycle",
+   
     "Finalizing Build...",
     "bag",
     "AMETHYST_BOW",
@@ -9176,7 +9150,7 @@ function _0x3f91() {
     "toString",
     "SPIKED_STONE_DOOR_ENEMY",
     "zIndex",
-    "tokenHolder.seedToPlace",
+    
     "Failed To Bind Chest Drawing",
     "Penguins",
     "createObjectStore",
@@ -9436,7 +9410,7 @@ function _0x3f91() {
     "FireMobs",
     "__ClientHandler__",
     "Flames",
-    "Token Holder",
+    
     "recipe_craft",
     "AutoRespawn.active",
     "setItem",
@@ -9788,7 +9762,7 @@ function _0x3f91() {
     "TOMATO_SEED",
     "Extra in map:",
     "WITCH",
-    "tokenHolder.bluecrown",
+   
     "slice",
     "STONE_DOOR_ENEMY",
     "strokeText",
@@ -9927,7 +9901,7 @@ function _0x3f91() {
     "Equip After Place",
     "Chest Info",
     "Translation",
-    "tokenHolder.autoseed",
+   
     "action",
     "Mode",
     "Failed To Bind Door Drawing",
@@ -9967,64 +9941,1736 @@ function _0x3f91() {
   return _0x3f91();
 }
 
-
-/* --- ARCT Cheats: Ally Radar & Inventory Module (Integrated) --- */
+/* --- ARCT Cheats: Ultimate Starve.io Module (Radar + Macros + ESP + Audio) --- */
 window.arctAllies = {};
+window.arctMarkers = [];
+window.arctTarget = null;
+window.arctLines = [];
+window.arctClientMacro = { path: [] };
+window.arctIsDead = false;
+
+// Создаем контейнер для командного чата
+const chatContainer = document.createElement('div');
+chatContainer.id = 'arct-team-chat';
+chatContainer.style.cssText = 'position: fixed; bottom: 150px; left: 20px; z-index: 99999; display: flex; flex-direction: column; gap: 5px; pointer-events: none;';
+document.body.appendChild(chatContainer);
+
+// Функция генерации звука
+function playNotificationSound() {
+    try {
+        let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        let osc = audioCtx.createOscillator();
+        let gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(587.33, audioCtx.currentTime); 
+        osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.1); 
+        gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.2);
+    } catch(e) {}
+}
+
+function showTeamMessage(name, msg) {
+    let soundEnabled = window.arctConfig?.Inventory?.chatSound ?? true;
+    if (soundEnabled) playNotificationSound();
+
+    const el = document.createElement('div');
+    el.style.cssText = 'background: rgba(0,0,0,0.6); border-left: 4px solid #00ffcc; color: #fff; padding: 6px 12px; font-family: "Baloo Paaji", sans-serif; font-size: 14px; border-radius: 4px; text-shadow: 1px 1px 2px #000;';
+    el.innerHTML = `<span style="color:#00ffcc; font-weight:bold;">[TEAM] ${name}:</span> ${msg}`;
+    chatContainer.appendChild(el);
+    setTimeout(() => {
+        el.style.opacity = '0';
+        el.style.transition = 'opacity 0.5s';
+        setTimeout(() => el.remove(), 500);
+    }, 8000); 
+}
+
+let savedName = localStorage.getItem('arct_radar_name');
+let myName = (savedName && savedName.trim() !== "") ? savedName.trim() : "";
+if (!myName) {
+    let nickInput = document.getElementById('nickname');
+    myName = (nickInput && nickInput.value && nickInput.value.trim() !== "") ? nickInput.value.trim() : "ARCT";
+}
+localStorage.setItem('arct_radar_name', myName);
+
 (function() {
-    function initRadar() {
-        try {
-            console.log("%c[ARCT Radar] Фоновый модуль с инвентарем запущен!", "color: lime;");
-            const ws = new WebSocket('wss://mazurenok.duckdns.org');
-            
-            ws.onopen = () => console.log("%c[ARCT Radar] Подключено к серверу!", "color: lime;");
-            
-            ws.onmessage = (e) => {
-                try { window.arctAllies = JSON.parse(e.data); } catch(err){}
-            };
-            
-            setInterval(() => {
-                if (ws.readyState === WebSocket.OPEN && window.v2603 && window.v2605 && window.v2605.uid) {
-                    const me = window.v2603.fast_units[window.v2605.uid];
-                    if (me) {
-                        // 1. Беремо нік
-                        let savedName = localStorage.getItem('arct_radar_name');
-                        let myName = (savedName && savedName.trim() !== "") ? savedName.trim() : "";
-                        if (myName === "") {
-                            let nickInput = document.getElementById('nickname');
-                            if (nickInput && nickInput.value && nickInput.value.trim() !== "") {
-                                myName = nickInput.value.trim();
-                            } else {
-                                myName = "ARCT";
-                            }
-                        }
+    'use strict';
 
-                        // 2. Збираємо інвентар
-                        let myInventory = {};
-                        try {
-                            let invObj = window.v2604 && window.v2604.WUU ? window.v2604.WUU.WUV : null;
-                            if (invObj) {
-                                for (let itemId in invObj) {
-                                    if (invObj[itemId] > 0) {
-                                        myInventory[itemId] = invObj[itemId];
-                                    }
-                                }
-                            }
-                        } catch(err) {}
+    let hookedSocket = null;
+    const GameCore = { sock: null, world: null, mapKeys: null, userInst: null };
+    
+    function updateGameCore() {
+        GameCore.sock = window.v2600;
+        if (!GameCore.sock) { for (let k in window) if (window[k] && window[k].websocket && window[k].websocket.readyState === 1) { GameCore.sock = window[k]; break; } }
+        GameCore.world = window.v2603;
+        if (!GameCore.world) { for (let k in window) if (window[k] && window[k].fast_units) { GameCore.world = window[k]; break; } }
+        GameCore.mapKeys = window.v2605;
+        if (!GameCore.mapKeys) { for (let k in window) if (window[k] && window[k].uid !== undefined) { GameCore.mapKeys = window[k]; break; } }
+        GameCore.userInst = window.v2604;
+        if (!GameCore.userInst) { for (let k in window) if (window[k] && window[k].WUF) { GameCore.userInst = window[k]; break; } }
 
-                        // 3. Відправляємо все разом
-                        ws.send(JSON.stringify({ 
-                            type: 'pos', 
-                            uid: window.v2605.uid,
-                            x: me.x, 
-                            y: me.y, 
-                            name: myName,
-                            inv: myInventory 
-                        }));
+        if (GameCore.sock && GameCore.sock.websocket && GameCore.sock.websocket !== hookedSocket) {
+            hookedSocket = GameCore.sock.websocket;
+            hookedSocket.addEventListener('close', () => {
+                window.arctIsDead = true;
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                    ws.send(JSON.stringify({ type: 'dead' }));
+                }
+            });
+        }
+    }
+    setInterval(updateGameCore, 1000);
+
+    function syncSmoothCoordinates() {
+        requestAnimationFrame(syncSmoothCoordinates);
+        let world = window.v2603 || GameCore.world;
+        if (window.arctAllies && world && world.fast_units) {
+            for (let id in window.arctAllies) {
+                let ally = window.arctAllies[id];
+                if (ally && ally.uid !== undefined) {
+                    let gameEntity = world.fast_units[ally.uid];
+                    if (gameEntity && typeof gameEntity.x === 'number' && typeof gameEntity.y === 'number') {
+                        ally.x = gameEntity.x;
+                        ally.y = gameEntity.y;
                     }
                 }
-            }, 500);
+            }
+        }
+    }
+    syncSmoothCoordinates(); 
+
+    let isStarted = false;
+    let ws = null;
+    let mouseX = 0, mouseY = 0;
+    let lastServerKey = ""; 
+
+    window.addEventListener('mousemove', e => { mouseX = e.clientX; mouseY = e.clientY; });
+
+    function checkAndStart() {
+        if (isStarted) return;
+        let world = window.v2603 || GameCore.world;
+        let mapKeys = window.v2605 || GameCore.mapKeys;
+
+        if (world && world.fast_units && mapKeys && mapKeys.uid !== undefined) {
+            isStarted = true;
+            initRadarAndModules(world, mapKeys);
+        }
+    }
+
+    function initRadarAndModules(worldRef, mapKeysRef) {
+        try {
+            let mySecretKey = localStorage.getItem('arct_radar_secret');
+            if (!mySecretKey) {
+                mySecretKey = prompt("🔐 Введи ключове слово для ARCT Радару:");
+                if (!mySecretKey || mySecretKey.trim() === "") return;
+                localStorage.setItem('arct_radar_secret', mySecretKey.trim());
+            }
+
+            console.log("%c[ARCT] Підключення до сервера...", "color: lime;");
+            ws = new WebSocket('wss://kubasstarve.duckdns.org');
+            
+            ws.onopen = () => { ws.send(JSON.stringify({ type: 'auth', secret: mySecretKey.trim() })); };
+            
+            ws.onmessage = (e) => {
+                try { 
+                    let data = JSON.parse(e.data);
+                    if (data.type === 'sys' && data.msg === 'Auth Failed') {
+                        alert("❌ Невірний ключ ARCT Радару!");
+                        localStorage.removeItem('arct_radar_secret'); ws.close(); return;
+                    }
+                    
+                    if (data.type === 'SERVER_MOVE') {
+                        let conf = window.arctConfig;
+                        let sock = window.v2600;
+                        let world = window.v2603;
+                        let mapKeys = window.v2605;
+                        
+                        if (sock && sock.websocket && sock.websocket.readyState === 1) {
+                            sock.websocket.send(new Uint8Array([37, data.dirCode]));
+                        }
+                        if (world && mapKeys) {
+                            let me = world.fast_units[mapKeys.uid];
+                            if (me) {
+                                me.angle = data.targetAngle;
+                                if (mapKeys.nangle) me[mapKeys.nangle] = data.targetAngle;
+                            }
+                        }
+                        if (data.action && sock && sock.websocket && sock.websocket.readyState === 1) {
+                            try {
+                                let normalizedAngle = Math.floor((((data.targetAngle + Math.PI * 2) % (Math.PI * 2)) * 255) / (Math.PI * 2));
+                                sock.websocket.send(JSON.stringify([7, normalizedAngle]));
+                                sock.websocket.send(JSON.stringify([35]));
+                            } catch(err) {}
+                        }
+                        return;
+                    }
+
+                    if (data.type === 'team_chat') {
+                        showTeamMessage(data.name, data.msg);
+                    } else if (data.type === 'target') {
+                        window.arctTarget = (data.uid === -1) ? null : { uid: data.uid, exp: data.exp };
+                    } else if (data.allies) {
+                        window.arctAllies = data.allies;
+                        window.arctMarkers = data.markers;
+                        window.arctLines = data.lines; 
+                    } else {
+                        window.arctAllies = data; 
+                    }
+                } catch(err){}
+            };
+
+            let chatInput = document.getElementById('chat_input');
+            if (chatInput) {
+                chatInput.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') {
+                        let text = chatInput.value;
+                        let teamChatEnabled = window.arctConfig?.Inventory?.teamChat ?? true;
+                        if (teamChatEnabled && text.startsWith('/t ')) {
+                            e.preventDefault(); e.stopPropagation();
+                            chatInput.value = '';
+                            document.getElementById('chat_block').style.display = 'none';
+                            if (ws.readyState === WebSocket.OPEN) {
+                                ws.send(JSON.stringify({ type: 'team_chat', name: localStorage.getItem('arct_radar_name'), msg: text.substring(3) }));
+                            }
+                        }
+                    }
+                }, true);
+            }
+
+            window.addEventListener('keydown', (e) => {
+                if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
+                
+                let conf = window.arctConfig;
+                let targetKey = conf?.Inventory?.targetBind || "KeyT";
+                let sosKey = conf?.Inventory?.sosBind || "F1";
+                let clearKey = conf?.Inventory?.clearBind || "KeyC";
+
+                if (conf && conf.Macro) {
+                    let addBind = conf.Macro.addBind || 'BracketLeft';
+                    let undoBind = conf.Macro.undoBind || 'Backslash';
+                    let playBind = conf.Macro.playBind || 'BracketRight';
+
+                    if (e.code === addBind && !e.repeat) {
+                        let world = window.v2603;
+                        let mapKeys = window.v2605;
+                        if (world && mapKeys) {
+                            let me = world.fast_units[mapKeys.uid];
+                            if (me) {
+                                window.arctClientMacro.path.push({ x: me.x, y: me.y, angle: me.angle || 0, action: (me.action > 0) });
+                            }
+                        }
+                    }
+                    if (e.code === undoBind && !e.repeat && window.arctClientMacro.path.length > 0) {
+                        window.arctClientMacro.path.pop();
+                    }
+                    if (e.code === playBind && playBind !== 'NONE' && !e.repeat) {
+                        conf.Macro.play = conf.Macro.play ? 0 : 1;
+                        if (conf.Macro.play) {
+                            if (window.arctClientMacro.path.length < 2) {
+                                conf.Macro.play = 0;
+                                return;
+                            }
+                            ws.send(JSON.stringify({ type: 'START_MACRO', path: window.arctClientMacro.path }));
+                        } else {
+                            ws.send(JSON.stringify({ type: 'STOP_MACRO' }));
+                            let sock = window.v2600; if (sock && sock.WQW) sock.WQW(0);
+                        }
+                    }
+                    if (['KeyW', 'KeyA', 'KeyS', 'KeyD'].includes(e.code) && conf.Macro.play) {
+                        conf.Macro.play = 0;
+                        ws.send(JSON.stringify({ type: 'STOP_MACRO' }));
+                        let sock = window.v2600; if (sock && sock.WQW) sock.WQW(0);
+                    }
+                }
+
+                if (ws.readyState !== WebSocket.OPEN) return;
+
+                if (e.altKey && e.code === clearKey) {
+                    e.preventDefault(); ws.send(JSON.stringify({ type: 'clear_draw' }));
+                }
+                if (e.code === sosKey) {
+                    e.preventDefault(); ws.send(JSON.stringify({ type: 'sos' }));
+                }
+                if (e.code === targetKey) {
+                    e.preventDefault();
+                    if (window.arctTarget && window.arctTarget.uid !== -1) {
+                        ws.send(JSON.stringify({ type: 'target', uid: -1 }));
+                        window.arctTarget = null;
+                        return;
+                    }
+                    let world = window.v2603 || worldRef;
+                    let v2604 = window.v2604;
+                    if (world && v2604 && v2604.WUF) {
+                        let closestUid = -1, minDst = Infinity;
+                        for (let uid in world.fast_units) {
+                            if (uid == window.v2605?.uid) continue;
+                            let enemy = world.fast_units[uid];
+                            if (enemy && enemy.player_name !== undefined) {
+                                let ex = v2604.WUF.x + enemy.x, ey = v2604.WUF.y + enemy.y;
+                                let dst = Math.hypot(mouseX - ex, mouseY - ey);
+                                if (dst < 150 && dst < minDst) { minDst = dst; closestUid = uid; }
+                            }
+                        }
+                        if (closestUid !== -1) ws.send(JSON.stringify({ type: 'target', uid: closestUid }));
+                    }
+                }
+            });
+
+            // Отправка данных на сервер
+            setInterval(() => {
+                if (ws.readyState !== WebSocket.OPEN) return;
+
+                let gameSock = window.v2600;
+                if (gameSock && gameSock.websocket && gameSock.websocket.url) {
+                    let rawUrl = gameSock.websocket.url;
+                    let currentServer = "unknown";
+                    try {
+                        let parts = rawUrl.split('?')[0].split('/');
+                        currentServer = parts[parts.length - 1]; 
+                        if (!currentServer || currentServer.includes('.io')) {
+                            currentServer = rawUrl.split('?')[0].replace("wss://", "").replace("ws://", "").split('/')[0].replace(/\d+/g, '');
+                        }
+                    } catch (err) {
+                        currentServer = "fallback_room";
+                    }
+
+                    if (currentServer !== lastServerKey) {
+                        lastServerKey = currentServer;
+                        ws.send(JSON.stringify({ type: 'set_server', serverKey: currentServer }));
+                    }
+                }
+
+                let world = window.v2603 || worldRef;
+                let mapKeys = window.v2605 || mapKeysRef;
+                if (!world || !mapKeys || mapKeys.uid === undefined) return;
+                
+                let me = world.fast_units[mapKeys.uid];
+                let hpPercent = window.arctMyHP !== undefined ? window.arctMyHP : 100;
+                
+                let gameOverUI = document.getElementById('game_over');
+                let isDeadUI = gameOverUI && window.getComputedStyle(gameOverUI).display !== 'none';
+                
+                // Проверяем элементы смерти
+                if (!me || me.spectator !== undefined || me.action === 5 || hpPercent <= 0 || isDeadUI) {
+                    if (!window.arctIsDead) {
+                        window.arctIsDead = true;
+                        ws.send(JSON.stringify({ type: 'dead' }));
+                        window.arctAllies = {};
+                        window.arctTarget = null;
+                    }
+                    return; 
+                }
+
+                // Если персонаж снова появился и живой — снимаем флаг смерти
+                if (window.arctIsDead && me && hpPercent > 0 && !isDeadUI) {
+                    window.arctIsDead = false;
+                }
+
+                if (window.arctIsDead) return;
+
+                let myEnemies = [];
+                if (world.fast_units) {
+                    for (let objId in world.fast_units) {
+                        if (objId == mapKeys.uid) continue; 
+                        let ent = world.fast_units[objId];
+                        
+                        if (ent && typeof ent.x === 'number' && typeof ent.y === 'number') {
+                            let objType = 'obj'; 
+                            
+                            if (ent.player_name !== undefined || ent.spectator !== undefined) {
+                                objType = 'player';
+                            } 
+                            else if (ent.owner !== undefined || ent.player_id !== undefined || ent.type > 0) {
+                                objType = 'build';
+                            }
+
+                            myEnemies.push({ 
+                                x: Math.round(ent.x), 
+                                y: Math.round(ent.y),
+                                type: objType
+                            });
+                        }
+                    }
+                }
+
+                let currentNick = localStorage.getItem('arct_radar_name') || myName;
+                let myInventory = {};
+                try {
+                    let invObj = window.v2604?.WUU?.WUV;
+                    if (invObj) {
+                        for (let itemId in invObj) {
+                            let item = invObj[itemId];
+                            if (!item) continue;
+                            let count = typeof item === 'number' ? item : (item.n ?? item.count ?? 1);
+                            if (count > 0) {
+                                let realId = (typeof item === 'object' && item.id !== undefined) ? item.id : parseInt(itemId);
+                                if (!isNaN(realId)) myInventory[realId] = count;
+                            }
+                        }
+                    }
+                } catch(err) {}
+
+                ws.send(JSON.stringify({ 
+                    type: 'pos', 
+                    uid: mapKeys.uid,
+                    x: me.x, y: me.y,
+                    hp: hpPercent,
+                    name: currentNick,
+                    inv: myInventory,
+                    enemies: myEnemies 
+                }));
+            }, 100);
+
         } catch(e){}
     }
 
-    setTimeout(initRadar, 3000);
-})();;
+    // ОТРИСОВКА РАДАРА
+    function renderCustomElements() {
+        if (window.arctIsDead) return; // Если мертв — полностью глушим отрисовку
+
+        let conf = window._0x73cd4e || window.arctConfig;
+        if (!conf || conf.Hidden?.active) return;
+        
+        let world = window.v2603 || (typeof gameWorld !== 'undefined' ? gameWorld : null);
+        let canvasCtx = document.getElementById("game_canvas")?.getContext("2d");
+        let mapKeys = window.v2605 || (typeof _0x57f7e4 !== 'undefined' ? _0x57f7e4 : null);
+        let userInst = window.v2604 || (typeof _0x3b2ae4 !== 'undefined' ? _0x3b2ae4 : null);
+        
+        if (!canvasCtx || !userInst || !mapKeys || !world) return;
+
+        let me = world.fast_units ? world.fast_units[mapKeys.uid] : null;
+        if (!me) return; 
+
+        let camX = userInst.WUF ? userInst.WUF.x : 0;
+        let camY = userInst.WUF ? userInst.WUF.y : 0;
+
+        const getItemImage = (realId) => {
+            let _0x46233c_ref = window.v2601 || (typeof _0x46233c !== 'undefined' ? _0x46233c : null);
+            if (!_0x46233c_ref) return null;
+            let imgObj = null;
+            if (_0x46233c_ref.WTJ && _0x46233c_ref.WTJ.items) {
+                let uiItems = _0x46233c_ref.WTJ.items;
+                let foundUI = Array.isArray(uiItems) ? uiItems.find(u => u && u.id === realId) : Object.values(uiItems).find(u => u && u.id === realId);
+                if (foundUI && foundUI.img && foundUI.img.src) imgObj = foundUI.img;
+            }
+            if (!imgObj && _0x46233c_ref.WTF) {
+                let wtfItem = _0x46233c_ref.WTF.find(w => w && (w.id === realId || w.type === realId)) || _0x46233c_ref.WTF[realId] || _0x46233c_ref.WTF[realId / 2 - 1];
+                if (wtfItem && wtfItem.info) {
+                    for (let k in wtfItem.info) {
+                        let arr = wtfItem.info[k];
+                        if (Array.isArray(arr) && arr[0]) {
+                            let rawImg = arr[0];
+                            if (rawImg instanceof HTMLImageElement || rawImg.src) { imgObj = rawImg; break; } 
+                            else if (typeof rawImg === 'object') {
+                                for (let prop in rawImg) {
+                                    if (typeof rawImg[prop] === 'string' && (rawImg[prop].startsWith('data:image') || rawImg[prop].includes('.png'))) {
+                                        let cachedImg = new Image(); cachedImg.src = rawImg[prop];
+                                        arr[0] = cachedImg; imgObj = cachedImg; break;
+                                    }
+                                }
+                            }
+                        }
+                        if (imgObj) break;
+                    }
+                }
+            }
+            return imgObj;
+        };
+
+        if (window.arctAllies && world.__NW__) {
+            canvasCtx.save();
+            let _0x46233c_ref = window.v2601 || (typeof _0x46233c !== 'undefined' ? _0x46233c : null);
+            const _mTx = _0x46233c_ref?.WTI?.translate?.x || 0;
+            const _mTy = (_0x46233c_ref?.WTI?.translate?.y || 0) + (userInst.WUU?.WUW?.length > 0 ? -120 : -50);
+            
+            if (window.arctLines) {
+                window.arctLines.forEach(l => {
+                    let lx0 = _mTx + (l.x0 / (world.__NW__ * 100)) * 193;
+                    let ly0 = _mTy + (l.y0 / (world.__NH__ * 100)) * 193;
+                    let lx1 = _mTx + (l.x1 / (world.__NW__ * 100)) * 193;
+                    let ly1 = _mTy + (l.y1 / (world.__NH__ * 100)) * 193;
+                    canvasCtx.strokeStyle = "rgba(0, 255, 204, 0.7)";
+                    canvasCtx.lineWidth = 2;
+                    canvasCtx.beginPath();
+                    canvasCtx.moveTo(lx0, ly0);
+                    canvasCtx.lineTo(lx1, ly1);
+                    canvasCtx.stroke();
+                });
+            }
+
+            for (let id in window.arctAllies) {
+                let p = window.arctAllies[id];
+                if (!p.x || !p.y) continue; 
+                let rx = _mTx + (p.x / (world.__NW__ * 100)) * 193;
+                let ry = _mTy + (p.y / (world.__NH__ * 100)) * 193;
+                canvasCtx.fillStyle = "#00FF00";
+                canvasCtx.beginPath();
+                canvasCtx.arc(rx, ry, 5, 0, Math.PI * 2);
+                canvasCtx.fill();
+                canvasCtx.lineWidth = 1;
+                canvasCtx.strokeStyle = "#000000";
+                canvasCtx.stroke();
+                if (p.name) {
+                    canvasCtx.font = "10px 'Baloo Paaji', sans-serif";
+                    canvasCtx.textAlign = "left";
+                    canvasCtx.textBaseline = "middle";
+                    canvasCtx.lineWidth = 2.5;
+                    canvasCtx.strokeStyle = "#000000";
+                    canvasCtx.fillStyle = "#FFFFFF";
+                    canvasCtx.strokeText(p.name, rx + 8, ry);
+                    canvasCtx.fillText(p.name, rx + 8, ry);
+                }
+            }
+
+            if (window.arctMarkers) {
+                window.arctMarkers.forEach(m => {
+                    let rx = _mTx + (m.x / (world.__NW__ * 100)) * 193;
+                    let ry = _mTy + (m.y / (world.__NH__ * 100)) * 193;
+                    canvasCtx.fillStyle = "#FF00FF";
+                    canvasCtx.beginPath();
+                    canvasCtx.arc(rx, ry, 4, 0, Math.PI * 2);
+                    canvasCtx.fill();
+                    canvasCtx.lineWidth = 1.5;
+                    canvasCtx.strokeStyle = "#FFFFFF";
+                    canvasCtx.stroke();
+                    canvasCtx.font = "bold 10px 'Baloo Paaji', sans-serif";
+                    canvasCtx.textAlign = "center";
+                    canvasCtx.lineWidth = 2.5;
+                    canvasCtx.strokeStyle = "#000000";
+                    canvasCtx.fillStyle = "#FF55FF";
+                    canvasCtx.strokeText(m.label, rx, ry - 8);
+                    canvasCtx.fillText(m.label, rx, ry - 8);
+                });
+            }
+            canvasCtx.restore();
+        }
+
+        if (window.arctClientMacro && window.arctClientMacro.path.length > 0 && userInst.WUF) {
+            canvasCtx.save();
+            canvasCtx.beginPath();
+            canvasCtx.lineWidth = 4;
+            canvasCtx.strokeStyle = "rgba(0, 255, 200, 0.85)";
+            for (let i = 0; i < window.arctClientMacro.path.length; i++) {
+                let px = window.arctClientMacro.path[i].x + camX;
+                let py = window.arctClientMacro.path[i].y + camY;
+                if (i === 0) canvasCtx.moveTo(px, py); else canvasCtx.lineTo(px, py);
+            }
+            canvasCtx.stroke();
+            for (let i = 0; i < window.arctClientMacro.path.length; i++) {
+                let pt = window.arctClientMacro.path[i];
+                let px = pt.x + camX;
+                let py = pt.y + camY;
+                canvasCtx.beginPath();
+                canvasCtx.arc(px, py, 6, 0, Math.PI * 2);
+                canvasCtx.fillStyle = "#00FFFF";
+                canvasCtx.fill();
+                canvasCtx.lineWidth = 2; canvasCtx.strokeStyle = "#000000"; canvasCtx.stroke();
+                canvasCtx.font = "bold 12px Arial"; canvasCtx.fillStyle = "#FFFFFF"; canvasCtx.textAlign = "center";
+                canvasCtx.fillText(`#${i + 1}`, px, py - 12);
+            }
+            canvasCtx.restore();
+        }
+
+        if (window._isSpecActive && window.arctAllies && userInst.WUF) {
+            canvasCtx.save();
+            for (let id in window.arctAllies) {
+                let ally = window.arctAllies[id];
+                if (ally.uid === mapKeys.uid) continue;
+
+                if (ally.enemies && ally.enemies.length > 0) {
+                    for (let i = 0; i < ally.enemies.length; i++) {
+                        let ent = ally.enemies[i];
+                        let screenX = ent.x + camX;
+                        let screenY = ent.y + camY;
+                        canvasCtx.beginPath();
+                        canvasCtx.lineWidth = 2;
+                        canvasCtx.strokeStyle = "white";
+                        if (ent.type === 'player') {
+                            canvasCtx.arc(screenX, screenY, 20, 0, Math.PI * 2);
+                            canvasCtx.fillStyle = "rgba(255, 0, 0, 0.5)";
+                            canvasCtx.fill();
+                            canvasCtx.stroke();
+                            canvasCtx.font = "bold 11px Tahoma";
+                            canvasCtx.fillStyle = "#FFAAAA";
+                            canvasCtx.textAlign = "center";
+                            canvasCtx.fillText("Игрок", screenX, screenY - 25);
+                        } else if (ent.type === 'build') {
+                            canvasCtx.rect(screenX - 15, screenY - 15, 30, 30);
+                            canvasCtx.fillStyle = "rgba(0, 150, 255, 0.4)";
+                            canvasCtx.fill();
+                            canvasCtx.stroke();
+                        } else {
+                            canvasCtx.arc(screenX, screenY, 8, 0, Math.PI * 2);
+                            canvasCtx.fillStyle = "rgba(100, 255, 100, 0.3)";
+                            canvasCtx.fill();
+                        }
+                    }
+                }
+
+                if (ally.x !== undefined && ally.y !== undefined) {
+                    let allyScreenX = ally.x + camX;
+                    let allyScreenY = ally.y + camY;
+                    canvasCtx.beginPath();
+                    canvasCtx.arc(allyScreenX, allyScreenY, 22, 0, Math.PI * 2);
+                    canvasCtx.fillStyle = "rgba(0, 255, 128, 0.3)";
+                    canvasCtx.fill();
+                    canvasCtx.lineWidth = 2;
+                    canvasCtx.strokeStyle = "#00FF80";
+                    canvasCtx.stroke();
+                    canvasCtx.font = "bold 13px Tahoma";
+                    canvasCtx.fillStyle = "#00FF80";
+                    canvasCtx.textAlign = "center";
+                    canvasCtx.fillText(ally.name || "Ally", allyScreenX, allyScreenY - 32);
+                }
+            }
+            canvasCtx.restore();
+        }
+
+        let targetsToDraw = [];
+        if (conf.Inventory && conf.Inventory.myInv) {
+            if (me && userInst?.WUU?.WUV) targetsToDraw.push({ x: me.x, y: me.y, inv: userInst.WUU.WUV });
+        }
+
+        if (window.arctTarget && window.arctTarget.exp > Date.now() && userInst.WUF) {
+            let players = world.units[0]; 
+            let targetEnemy = null;
+            let pidKey = mapKeys?.pid || "playerId";
+            if (players) {
+                for (let i = 0; i < players.length; i++) {
+                    if (players[i][pidKey] === window.arctTarget.uid) { targetEnemy = players[i]; break; }
+                }
+            }
+            if (targetEnemy && typeof targetEnemy.x === 'number') {
+                let sx = camX + targetEnemy.x;
+                let sy = camY + targetEnemy.y;
+                canvasCtx.save();
+                canvasCtx.strokeStyle = "rgba(255, 0, 0, 0.8)";
+                canvasCtx.lineWidth = 4;
+                canvasCtx.beginPath();
+                canvasCtx.arc(sx, sy, 50, 0, Math.PI * 2);
+                canvasCtx.moveTo(sx - 65, sy); canvasCtx.lineTo(sx + 65, sy);
+                canvasCtx.moveTo(sx, sy - 65); canvasCtx.lineTo(sx, sy + 65);
+                canvasCtx.stroke();
+                canvasCtx.fillStyle = "red";
+                canvasCtx.font = "bold 14px 'Baloo Paaji'";
+                canvasCtx.textAlign = "center";
+                canvasCtx.fillText("TARGET", sx, sy - 60);
+                canvasCtx.restore();
+            }
+        }
+
+        if (window.arctAllies) {
+            let pidKey = mapKeys?.pid || "playerId";
+            for (let id in window.arctAllies) {
+                let ally = window.arctAllies[id];
+                if (!ally || ally.uid === undefined) continue;
+
+                if (ally.ownerName && world.WTN) {
+                    let playerUnit = world.fast_units[ally.uid];
+                    if (playerUnit && playerUnit[pidKey] !== undefined) {
+                        let pid = playerUnit[pidKey];
+                        let wtnPlayer = world.WTN[pid];
+                        if (wtnPlayer && typeof wtnPlayer.nickname === 'string') {
+                            let suffix = ` (${ally.ownerName})`;
+                            if (!wtnPlayer.nickname.includes(suffix)) {
+                                wtnPlayer.nickname = wtnPlayer.nickname.replace(/ \([^)]+\)$/, ""); 
+                                wtnPlayer.nickname += suffix;
+                                wtnPlayer.label = null; 
+                                wtnPlayer.label_winter = null;
+                                wtnPlayer.ldb_label = null;
+                            }
+                        }
+                    }
+                }
+
+                if (ally.uid === mapKeys.uid) continue;
+                
+                if (typeof ally.x === 'number' && typeof ally.y === 'number' && userInst.WUF) {
+                    let sx = camX + ally.x;
+                    let sy = camY + ally.y;
+                    
+                    let isInvDrawn = false;
+                    if (conf.Inventory && conf.Inventory.teamInv && ally.inv) {
+                        isInvDrawn = true;
+                        targetsToDraw.push({ x: ally.x, y: ally.y, inv: ally.inv });
+                    }
+
+                    if (conf.Inventory && conf.Inventory.showHp && ally.hp !== undefined) {
+                        let hpOffsetY = isInvDrawn ? sy - 145 : sy + 45; 
+                        canvasCtx.save();
+                        canvasCtx.fillStyle = "#000000";
+                        canvasCtx.fillRect(sx - 25, hpOffsetY, 50, 10);
+                        canvasCtx.fillStyle = ally.hp > 50 ? "#00FF00" : (ally.hp > 25 ? "#FFFF00" : "#FF0000");
+                        canvasCtx.fillRect(sx - 24, hpOffsetY + 1, 48 * (ally.hp / 100), 8);
+                        canvasCtx.font = "bold 10px 'Baloo Paaji'";
+                        canvasCtx.fillStyle = "#FFFFFF";
+                        canvasCtx.textAlign = "center";
+                        canvasCtx.fillText(ally.hp + "%", sx, hpOffsetY + 9);
+                        canvasCtx.restore();
+                    }
+
+                    if (ally.sos > Date.now()) {
+                        canvasCtx.save();
+                        canvasCtx.globalAlpha = Math.abs(Math.sin(Date.now() / 150)); 
+                        canvasCtx.beginPath();
+                        canvasCtx.arc(sx, sy, 70, 0, Math.PI * 2);
+                        canvasCtx.lineWidth = 6;
+                        canvasCtx.strokeStyle = "red";
+                        canvasCtx.stroke();
+                        canvasCtx.fillStyle = "red";
+                        canvasCtx.font = "bold 20px 'Baloo Paaji'";
+                        canvasCtx.textAlign = "center";
+                        canvasCtx.fillText("ПОМОЩЬ [" + ally.name + "]", sx, sy - 90);
+                        canvasCtx.restore();
+                    }
+                }
+            }
+        }
+
+        if (targetsToDraw.length > 0 && userInst.WUF) {
+            canvasCtx.save();
+            targetsToDraw.forEach(target => {
+                let screenX = camX + target.x;
+                let screenY = camY + target.y - 130; 
+                let items = [];
+                try {
+                    let wuv = target.inv; 
+                    for (let key in wuv) {
+                        let item = wuv[key];
+                        if (!item) continue;
+                        let count = typeof item === 'number' ? item : (item.n ?? item.count ?? 1);
+                        if (count <= 0) continue;
+                        let realId = (typeof item === 'object' && item.id !== undefined) ? item.id : parseInt(key);
+                        if (isNaN(realId)) continue;
+                        let imgObj = getItemImage(realId);
+                        items.push({ count: count, img: imgObj });
+                    }
+                } catch(e) {}
+
+                if (items.length > 0) {
+                    let size = 28, gap = 4, totalW = items.length * (size + gap) - gap;
+                    let startX = screenX - totalW / 2;
+                    items.forEach((itm, i) => {
+                        let ix = startX + i * (size + gap), iy = screenY;
+                        canvasCtx.fillStyle = "#123b42"; canvasCtx.strokeStyle = "#0b262b"; canvasCtx.lineWidth = 2;
+                        canvasCtx.fillRect(ix, iy, size, size); canvasCtx.strokeRect(ix, iy, size, size);
+                        if (itm.img) {
+                            try {
+                                if (typeof window._0x373076 === 'function') window._0x373076(canvasCtx, itm.img, ix + 3, iy + 3, size - 6, size - 6);
+                                else canvasCtx.drawImage(itm.img, ix + 3, iy + 3, size - 6, size - 6);
+                            } catch(e) {}
+                        }
+                        if (itm.count > 1) {
+                            canvasCtx.font = "bold 9px 'Baloo Paaji'"; canvasCtx.textAlign = "right"; canvasCtx.textBaseline = "bottom";
+                            canvasCtx.lineWidth = 2.5; canvasCtx.strokeStyle = "#000000"; canvasCtx.fillStyle = "#FFFFFF";
+                            canvasCtx.strokeText("x" + itm.count, ix + size - 2, iy + size - 1); canvasCtx.fillText("x" + itm.count, ix + size - 2, iy + size - 1);
+                        }
+                    });
+                }
+            });
+            canvasCtx.restore();
+        }
+
+        if (conf.boxInfo && world.units && userInst.WUF) {
+            canvasCtx.save();
+            canvasCtx.font = "bold 15px 'Baloo Paaji', Arial, sans-serif";
+            canvasCtx.textAlign = "center";
+            canvasCtx.lineWidth = 4;
+            canvasCtx.strokeStyle = "#000000"; 
+            canvasCtx.fillStyle = "#00FFFF";  
+
+            const updateBoxState = (entity, maxTime) => {
+                if (!entity._arctBoxInfo) entity._arctBoxInfo = { timeLeft: maxTime, lastUpdate: Date.now(), hits: 0, wasHitting: true };
+                let now = Date.now();
+                if (entity.action === 2 && entity._arctBoxInfo.wasHitting) {
+                    entity._arctBoxInfo.wasHitting = false; entity._arctBoxInfo.hits++;
+                } else if (entity.action !== 2) {
+                    entity._arctBoxInfo.wasHitting = true;
+                }
+                let delta = (now - entity._arctBoxInfo.lastUpdate) / 1000;
+                if (delta > 0 && maxTime > 0) {
+                    entity._arctBoxInfo.timeLeft = Math.max(0, entity._arctBoxInfo.timeLeft - delta);
+                    entity._arctBoxInfo.lastUpdate = now;
+                }
+                return entity._arctBoxInfo;
+            };
+
+            const drawEntities = (typeId, timeLimit, showTimeAndName, typeName) => {
+                let entities = world.units[typeId];
+                if (!entities) return;
+                for (let i = 0; i < entities.length; i++) {
+                    let ent = entities[i];
+                    if (!ent || ent.x === undefined || ent.y === undefined) continue;
+                    let screenX = camX + ent.x;
+                    let screenY = camY + ent.y - 25;
+                    let state = updateBoxState(ent, timeLimit);
+                    
+                    let yOffset = screenY;
+                    if (showTimeAndName) {
+                        canvasCtx.strokeText(typeName, screenX, yOffset);
+                        canvasCtx.fillText(typeName, screenX, yOffset);
+                        yOffset += 18;
+                        let timeStr = "Time: " + state.timeLeft.toFixed(1) + "s";
+                        canvasCtx.strokeText(timeStr, screenX, yOffset);
+                        canvasCtx.fillText(timeStr, screenX, yOffset);
+                        yOffset += 18;
+                    } else {
+                        canvasCtx.strokeText(typeName, screenX, yOffset);
+                        canvasCtx.fillText(typeName, screenX, yOffset);
+                        yOffset += 18;
+                    }
+                    let hitsStr = "Hits: " + state.hits;
+                    canvasCtx.strokeText(hitsStr, screenX, yOffset);
+                    canvasCtx.fillText(hitsStr, screenX, yOffset);
+                }
+            };
+
+            drawEntities(103, 0, false, "Gift");
+            drawEntities(97, 0, false, "Treasure");
+            drawEntities(98, 240, true, "Dead"); 
+            canvasCtx.restore();
+        }
+
+        try {
+            let customLvl = conf?.Inventory?.myCustomLevel;
+            if (customLvl && world.WTN) {
+                let myUserData = world.WTN[mapKeys.uid / (mapKeys.max_units || 1)];
+                if (myUserData && myUserData.level !== undefined) {
+                    myUserData.level = parseInt(customLvl) || 0;
+                }
+            }
+        } catch(e) {}
+    }
+
+    let renderHooked = false;
+    let renderChecker = setInterval(() => {
+        let _0x46233c_ref = window.v2601 || (typeof _0x46233c !== 'undefined' ? _0x46233c : null);
+        if (!renderHooked && _0x46233c_ref && typeof _0x46233c_ref.drawGame === 'function') {
+            let originalDraw = _0x46233c_ref.drawGame;
+            _0x46233c_ref.drawGame = function() {
+                originalDraw.apply(this, arguments);
+                renderCustomElements();
+            };
+            renderHooked = true;
+            clearInterval(renderChecker);
+        }
+    }, 1000);
+
+    let serverChecker = setInterval(() => {
+        try {
+            checkAndStart();
+            if (isStarted) clearInterval(serverChecker);
+        } catch(e){}
+    }, 1500);
+})();
+// =====================================================================
+// --- ФИКС БИНДОВ И АВТОСБОР (БЕЗ ОШИБОК БИТМАСОК + ТАЙМЕРЫ) ---
+// =====================================================================
+window.addEventListener('keydown', (e) => {
+    if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
+    let conf = typeof _0x73cd4e !== 'undefined' ? _0x73cd4e : window.arctConfig;
+    if (!conf) return;
+
+    let changed = false;
+
+    if (conf.AutoExtTake && e.code === conf.AutoExtTake.bind && conf.AutoExtTake.bind !== "NONE") {
+        e.stopImmediatePropagation(); 
+        if (!e.repeat) {
+            conf.AutoExtTake.active = conf.AutoExtTake.active ? 0 : 1;
+            changed = true;
+        }
+    }
+    
+    if (conf.AutoBreadTake && e.code === conf.AutoBreadTake.bind && conf.AutoBreadTake.bind !== "NONE") {
+        e.stopImmediatePropagation(); 
+        if (!e.repeat) {
+            conf.AutoBreadTake.active = conf.AutoBreadTake.active ? 0 : 1;
+            changed = true;
+        }
+    }
+
+    if (changed && typeof _0xa896c1 !== 'undefined') {
+        _0xa896c1.updateGuiValues();
+    }
+}, true);
+
+window.addEventListener('keyup', (e) => {
+    if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
+    let conf = typeof _0x73cd4e !== 'undefined' ? _0x73cd4e : window.arctConfig;
+    if (!conf) return;
+    
+    if (conf.AutoExtTake && e.code === conf.AutoExtTake.bind && conf.AutoExtTake.bind !== "NONE") {
+        e.stopImmediatePropagation();
+    }
+    if (conf.AutoBreadTake && e.code === conf.AutoBreadTake.bind && conf.AutoBreadTake.bind !== "NONE") {
+        e.stopImmediatePropagation();
+    }
+}, true);
+
+// --- САМ ЦИКЛ АВТОСБОРА ---
+setInterval(() => {
+    let conf = typeof _0x73cd4e !== 'undefined' ? _0x73cd4e : window.arctConfig;
+    if (!conf || (!conf.AutoExtTake.active && !conf.AutoBreadTake.active && !conf.AutoSteal.active)) return;
+
+    let sock = window.v2600 || window._0x53166f;
+    let world = window.v2603 || window.gameWorld;
+    let mapKeys = window.v2605 || window._0x57f7e4;
+
+    if (!sock || !sock.websocket || sock.websocket.readyState !== 1 || !world || !world.fast_units || !mapKeys) return;
+
+    let uid = mapKeys.uid;
+    if (uid === undefined) return;
+    let player = world.fast_units[uid];
+    if (!player) return;
+
+    const pidKey = mapKeys.pid || "playerId";
+    const TAKE_DIST_SQ = 90000; // Ровно 300 радиус
+    let originalSend = sock.websocket._originalSend || sock.websocket.send;
+
+    // ЛИМИТ ПАКЕТОВ (Защита от кика)
+    const MAX_PACKETS_PER_TICK = 4;
+    let packetsSent = 0;
+    let now = Date.now();
+
+    const sendRaw = (str) => {
+        try { originalSend.call(sock.websocket, str); } catch(e) {}
+        packetsSent++;
+    };
+    
+    const checkDist = (p1, p2) => {
+        let dx = p1.x - p2.x, dy = p1.y - p2.y;
+        return (dx * dx + dy * dy) < TAKE_DIST_SQ;
+    };
+
+    // 1. Экстракторы 
+    if (conf.AutoExtTake.active) {
+        for (let type = 24; type <= 37; type++) {
+            if (packetsSent >= MAX_PACKETS_PER_TICK) break;
+            
+            let list = world.units[type];
+            if (!list) continue;
+            for (let i = 0; i < list.length; i++) {
+                if (packetsSent >= MAX_PACKETS_PER_TICK) break;
+                
+                let ext = list[i];
+                if (ext && ext.x !== undefined && checkDist(player, ext)) {
+                    if (ext[pidKey] !== undefined && ext.id !== undefined) {
+                        
+                        // Кулдаун 1500мс на каждый отдельный бур
+                        if (!ext._lastTake || now - ext._lastTake > 1500) {
+                            sendRaw("[12," + ext[pidKey] + "," + ext.id + "," + type + "]");
+                            ext._lastTake = now;
+                        }
+                        
+                    }
+                }
+            }
+        }
+    }
+
+    // 2. Хлеб и Печи (Бредтейк)
+    if (conf.AutoBreadTake.active && packetsSent < MAX_PACKETS_PER_TICK) {
+        let millTypes = [41, 43];
+        for (let t = 0; t < millTypes.length; t++) {
+            if (packetsSent >= MAX_PACKETS_PER_TICK) break;
+            
+            let type = millTypes[t];
+            let mills = world.units[type];
+            if (!mills) continue;
+            
+            for (let j = 0; j < mills.length; j++) {
+                if (packetsSent >= MAX_PACKETS_PER_TICK) break;
+                
+                let obj = mills[j];
+                if (obj && obj.x !== undefined && checkDist(player, obj)) {
+                    if (obj[pidKey] !== undefined && obj.id !== undefined) {
+                        
+                        // Кулдаун 1500мс
+                        if (!obj._lastTake || now - obj._lastTake > 1500) {
+                            let header = type === 41 ? 1 : 28;
+                            sendRaw("[" + header + "," + obj[pidKey] + "," + obj.id + "]");
+                            obj._lastTake = now;
+                        }
+                        
+                    }
+                }
+            }
+        }
+    }
+
+    // 3. Воровство из сундуков (БЕЗ ПРОВЕРОК И БЫСТРЕЕ)
+    if (conf.AutoSteal.active && packetsSent < MAX_PACKETS_PER_TICK) {
+        let chests = world.units[11];
+        if (chests) {
+            for (let k = 0; k < chests.length; k++) {
+                if (packetsSent >= MAX_PACKETS_PER_TICK) break;
+                
+                let chest = chests[k];
+                if (chest && chest.x !== undefined && checkDist(player, chest)) {
+                    let pid = chest[pidKey], iid = chest.id;
+                    if (pid !== undefined && iid !== undefined) {
+                        
+                        // Кулдаун снижен до 200 мс (максимально быстрый спам)
+                        if (!chest._lastSteal || now - chest._lastSteal > 50) {
+                            sendRaw("[18," + pid + "," + iid + "]"); // Сразу шлём пакет на взятие предмета
+                            chest._lastSteal = now;
+                        }
+                        
+                    }
+                }
+            }
+        }
+    }
+}, 400);
+// =====================================================================
+// --- СИСТЕМА МАКРОСОВ (WAYPOINTS + ИДЕАЛЬНЫЙ OFF-TAB И ВИЗУАЛ) ---
+// --- ОПТИМИЗИРОВАННАЯ ВЕРСИЯ (Без замыкания линий) ---
+// =====================================================================
+window.arctMacro = {
+    path: [],
+    currentIndex: 0,
+    targetAngle: 0, 
+    
+    sendMove: function(dirCode) {
+        let sock = window.v2600;
+        if (sock && sock.websocket && sock.websocket.readyState === 1 && sock.websocket._originalSend) {
+            sock.websocket._originalSend.call(sock.websocket, new Uint8Array([37, dirCode]));
+        }
+    },
+    releaseAll: function() {
+        this.sendMove(0);
+    },
+    updateUI: function() {
+        let labels = document.querySelectorAll('label');
+        for (let i = 0; i < labels.length; i++) {
+            if (labels[i].textContent.trim() === 'Enable Path Play') {
+                let cb = labels[i].parentElement.querySelector('input[type="checkbox"]');
+                if (cb && window.arctConfig && window.arctConfig.Macro) {
+                    cb.checked = !!window.arctConfig.Macro.play;
+                }
+            }
+        }
+    }
+};
+
+(function() {
+    const PI2 = Math.PI * 2;
+    const RAD_TO_DEG = 180 / Math.PI;
+
+    // --- 1. ПЕРЕХВАТЧИК ПАКЕТОВ (С авто-обновлением при респавне) ---
+    setInterval(() => {
+        let sock = window.v2600;
+        if (sock && sock.websocket && !sock.websocket._isMacroHooked) {
+            sock.websocket._originalSend = sock.websocket.send;
+            sock.websocket.send = function(data) {
+                let conf = window.arctConfig;
+                if (conf && conf.Macro && conf.Macro.play) {
+                    try {
+                        // Блокируем WASD с клавиатуры
+                        if (data instanceof Uint8Array || data instanceof ArrayBuffer) {
+                            if (new Uint8Array(data)[0] === 37) return; 
+                        }
+                        // Оптимизация: вместо JSON.parse просто проверяем начало строки
+                        else if (typeof data === 'string' && data.startsWith('[7,')) {
+                            return; 
+                        }
+                    } catch(e) {}
+                }
+                return this._originalSend.apply(this, arguments);
+            };
+            sock.websocket._isMacroHooked = true;
+            console.log("%c[ARCT МАКРОС] 🔌 Хук сокета успешно оптимизирован и установлен!", "color: lime;");
+        }
+    }, 1000);
+
+    // --- 2. ОБРАБОТЧИК БИНДОВ ИЗ МЕНЮ ---
+    window.addEventListener('keydown', (e) => {
+        if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
+        let conf = window.arctConfig;
+        if (!conf || !conf.Macro) return;
+        
+        let addBind = conf.Macro.addBind || 'BracketLeft';
+        let undoBind = conf.Macro.undoBind || 'Backslash';
+        let playBind = conf.Macro.playBind || 'BracketRight';
+        
+        if (e.code === addBind && !e.repeat) {
+            let world = window.v2603;
+            let mapKeys = window.v2605;
+            if (world && mapKeys) {
+                let me = world.fast_units[mapKeys.uid];
+                if (me) {
+                    window.arctMacro.path.push({
+                        x: me.x,
+                        y: me.y,
+                        action: (me.action > 0)
+                    });
+                    console.log(`%c[ARCT МАКРОС] 📍 Точка #${window.arctMacro.path.length} добавлена!`, "color: cyan;");
+                }
+            }
+        }
+
+        if (e.code === undoBind && !e.repeat) {
+            if (window.arctMacro.path.length > 0) {
+                window.arctMacro.path.pop();
+                console.log(`%c[ARCT МАКРОС] ↩️ Точка удалена. Осталось: ${window.arctMacro.path.length}`, "color: orange;");
+            }
+        }
+        
+        if (e.code === playBind && playBind !== 'NONE' && !e.repeat) {
+            conf.Macro.play = conf.Macro.play ? 0 : 1;
+            if (conf.Macro.play) {
+                if (window.arctMacro.path.length < 2) {
+                    console.log("%c[ARCT МАКРОС] ❌ Нужно хотя бы 2 точки!", "color: red;");
+                    conf.Macro.play = 0;
+                    return;
+                }
+                window.arctMacro.currentIndex = 0;
+                console.log("%c[ARCT МАКРОС] 🟢 Запуск!", "color: lime;");
+            } else {
+                window.arctMacro.releaseAll();
+                console.log("%c[ARCT МАКРОС] ⏸️ Стоп.", "color: orange;");
+            }
+            window.arctMacro.updateUI();
+        }
+
+        if (['KeyW', 'KeyA', 'KeyS', 'KeyD'].includes(e.code) && conf.Macro.play) {
+            conf.Macro.play = 0;
+            window.arctMacro.releaseAll();
+            window.arctMacro.updateUI();
+            console.log("%c[ARCT МАКРОС] ⚠️ Управление перехвачено.", "color: orange;");
+        }
+    });
+
+    // --- 3. ЦИКЛ ДВИЖЕНИЯ (WEB WORKER ДЛЯ OFFTAB) ---
+    const workerCode = `setInterval(() => postMessage('tick'), 50);`;
+    const blob = new Blob([workerCode], { type: 'application/javascript' });
+    const bgWorker = new Worker(URL.createObjectURL(blob));
+
+    let lastHitTime = 0;
+    let lastSentDir = -1;
+
+    bgWorker.onmessage = function(e) {
+        if (e.data !== 'tick') return;
+
+        let conf = window.arctConfig;
+        let macro = window.arctMacro;
+        if (!conf || !conf.Macro) return;
+
+        // Если выключено - тормозим и выходим
+        if (!conf.Macro.play) {
+            if (lastSentDir !== 0) {
+                macro.releaseAll();
+                lastSentDir = 0;
+            }
+            return;
+        }
+
+        if (macro.path.length === 0) return;
+
+        let world = window.v2603;
+        let mapKeys = window.v2605;
+        let sock = window.v2600;
+
+        if (!world || !mapKeys || !sock || !sock.websocket || sock.websocket.readyState !== 1) return;
+        let me = world.fast_units[mapKeys.uid];
+        if (!me) return;
+
+        let target = macro.path[macro.currentIndex];
+
+        let realX = (me.r && me.r.x !== undefined) ? me.r.x : me.x;
+        let realY = (me.r && me.r.y !== undefined) ? me.r.y : me.y;
+
+        let dx = target.x - realX;
+        let dy = target.y - realY;
+        
+        // Оптимизация: проверяем квадрат дистанции (60 * 60 = 3600)
+        if (dx * dx + dy * dy <= 3600) {
+            macro.currentIndex = (macro.currentIndex + 1) % macro.path.length;
+            target = macro.path[macro.currentIndex];
+            dx = target.x - realX;
+            dy = target.y - realY;
+        }
+
+        let angleRad = Math.atan2(dy, dx);
+        macro.targetAngle = angleRad;
+
+        let angleDeg = angleRad * RAD_TO_DEG;
+        if (angleDeg < 0) angleDeg += 360;
+
+        // Оптимизация определения 8-стороннего направления через математику
+        let sector = (((angleDeg + 22.5) % 360) / 45) | 0;
+        const dirMap = [2, 6, 4, 5, 1, 9, 8, 10];
+        let dirCode = dirMap[sector];
+
+        if (lastSentDir !== dirCode) {
+            macro.sendMove(dirCode);
+            lastSentDir = dirCode;
+        }
+
+        // Спам поворотом
+        if (target.action) {
+            let now = performance.now();
+            if (now - lastHitTime > 200) {
+                try {
+                    let normalizedAngle = ((((angleRad + PI2) % PI2) * 255) / PI2) | 0;
+                    // Оптимизация: строка собирается напрямую
+                    sock.websocket._originalSend.call(sock.websocket, "[24," + normalizedAngle + "]");
+                } catch (err) {}
+                lastHitTime = now;
+            }
+        }
+    };
+
+    // --- 4. РЕНДЕР МАРШРУТА И ЖЕСТКАЯ ФИКСАЦИЯ УГЛА ---
+    let checkCtx = setInterval(() => {
+        let worldCtx = window.v2601;
+        if (worldCtx && worldCtx.drawGame) {
+            clearInterval(checkCtx);
+            let originalDrawGame = worldCtx.drawGame;
+            
+            worldCtx.drawGame = function() {
+                let conf = window.arctConfig;
+                let macro = window.arctMacro;
+                
+                // !!! ЖЕСТКАЯ ФИКСАЦИЯ УГЛА !!!
+                if (conf && conf.Macro && conf.Macro.play && macro.targetAngle !== undefined) {
+                    let world = window.v2603;
+                    let mapKeys = window.v2605;
+                    if (world && mapKeys) {
+                        let me = world.fast_units[mapKeys.uid];
+                        if (me) {
+                            me.angle = macro.targetAngle;
+                            if (mapKeys.nangle) me[mapKeys.nangle] = macro.targetAngle;
+                            if (me.r) me.r.angle = macro.targetAngle; 
+                            me.targetAngle = macro.targetAngle; 
+                        }
+                    }
+                }
+
+                originalDrawGame.apply(this, arguments);
+
+                let pathLen = macro.path.length;
+                if (!pathLen) return;
+
+                let wuf = window.v2604?.WUF; 
+                let ctx = window.v2601?.WTI?.ctx || document.getElementById('game_canvas')?.getContext('2d');
+                if (!ctx || !wuf) return;
+
+                ctx.save();
+                ctx.beginPath();
+                ctx.lineWidth = 4;
+                ctx.lineCap = "round";
+                ctx.lineJoin = "round";
+                ctx.strokeStyle = "rgba(0, 255, 200, 0.85)";
+                ctx.shadowColor = "rgba(0, 255, 200, 0.5)";
+                ctx.shadowBlur = 10;
+
+                // Линия больше не замыкается на первую точку
+                for (let i = 0; i < pathLen; i++) {
+                    let px = macro.path[i].x + wuf.x;
+                    let py = macro.path[i].y + wuf.y;
+                    if (i === 0) ctx.moveTo(px, py);
+                    else ctx.lineTo(px, py);
+                }
+                
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+
+                for (let i = 0; i < pathLen; i++) {
+                    let pt = macro.path[i];
+                    let px = pt.x + wuf.x;
+                    let py = pt.y + wuf.y;
+                    
+                    ctx.beginPath();
+                    ctx.arc(px, py, 6, 0, PI2);
+                    ctx.fillStyle = (i === macro.currentIndex && conf?.Macro?.play) ? "#00FF00" : "#00FFFF";
+                    ctx.fill();
+                    ctx.lineWidth = 2;
+                    ctx.strokeStyle = "#000000";
+                    ctx.stroke();
+
+                    ctx.font = "bold 12px Arial";
+                    ctx.fillStyle = "#FFFFFF";
+                    ctx.textAlign = "center";
+                    ctx.fillText("#" + (i + 1), px, py - 12);
+                }
+                ctx.restore();
+            };
+        }
+    }, 1000);
+})();
+// =====================================================================
+// --- СТАТИЧНЫЙ BOX ESP (OPTIMIZED) ---
+// =====================================================================
+(function() {
+    let espCtx = null;
+    let espCanvas = null;
+    const FONT = "bold 15px 'Baloo Paaji', Arial, sans-serif";
+
+    function setupEspCanvas() {
+        if (document.getElementById('arct-box-esp')) return;
+        espCanvas = document.createElement('canvas');
+        espCanvas.id = 'arct-box-esp';
+        espCanvas.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;pointer-events:none;z-index:99998;';
+        document.body.appendChild(espCanvas);
+        espCtx = espCanvas.getContext('2d');
+
+        const resize = () => { 
+            espCanvas.width = window.innerWidth; 
+            espCanvas.height = window.innerHeight; 
+        };
+        window.addEventListener('resize', resize);
+        resize();
+
+        requestAnimationFrame(renderBoxInfo);
+    }
+
+    // Вызов Date.now() передается аргументом (now), чтобы не вызывать его для каждого объекта
+    function updateBoxState(entity, maxTime, now) {
+        if (!entity._arctBoxInfo) {
+            entity._arctBoxInfo = { timeLeft: maxTime, lastUpdate: now, hits: 0, wasHitting: true };
+        }
+        
+        if (entity.action === 2 && entity._arctBoxInfo.wasHitting) {
+            entity._arctBoxInfo.wasHitting = false; 
+            entity._arctBoxInfo.hits++;
+        } else if (entity.action !== 2) {
+            entity._arctBoxInfo.wasHitting = true;
+        }
+
+        // Умножение работает быстрее деления
+        let delta = (now - entity._arctBoxInfo.lastUpdate) * 0.001;
+        if (delta > 0 && maxTime > 0) {
+            let newTime = entity._arctBoxInfo.timeLeft - delta;
+            entity._arctBoxInfo.timeLeft = newTime < 0 ? 0 : newTime; // Быстрее, чем Math.max
+            entity._arctBoxInfo.lastUpdate = now;
+        }
+        return entity._arctBoxInfo;
+    }
+
+    // Функция отрисовки вынесена наружу, чтобы не пересоздаваться 60 раз в секунду
+    function drawEntities(world, typeId, timeLimit, showTimeAndName, typeName, camX, camY, screenW, screenH, now) {
+        let entities = world.units[typeId];
+        if (!entities) return;
+        
+        for (let i = 0, len = entities.length; i < len; i++) {
+            let ent = entities[i];
+            if (!ent || ent.x === undefined || ent.y === undefined) continue;
+            
+            let screenX = camX + ent.x;
+            let screenY = camY + ent.y - 25;
+            
+            if (screenX > -100 && screenX < screenW && screenY > -100 && screenY < screenH) {
+                let state = updateBoxState(ent, timeLimit, now);
+                let yOffset = screenY;
+                
+                if (showTimeAndName) {
+                    espCtx.strokeText(typeName, screenX, yOffset);
+                    espCtx.fillText(typeName, screenX, yOffset);
+                    yOffset += 18;
+                    
+                    let timeStr = "Time: " + state.timeLeft.toFixed(1) + "s";
+                    espCtx.strokeText(timeStr, screenX, yOffset);
+                    espCtx.fillText(timeStr, screenX, yOffset);
+                    yOffset += 18;
+                }
+                
+                let hitsStr = "Hits: " + state.hits;
+                espCtx.strokeText(hitsStr, screenX, yOffset);
+                espCtx.fillText(hitsStr, screenX, yOffset);
+            }
+        }
+    }
+
+    function renderBoxInfo() {
+        if (!espCtx || !espCanvas) return requestAnimationFrame(renderBoxInfo);
+
+        let conf = window._0x73cd4e; 
+        let world = window.v2603;
+        let mapKeys = window.v2605;
+        let userInst = window.v2604;
+
+        // Ранний выход с очисткой экрана, если ESP выключен или игра не прогрузилась
+        if (!conf || !conf.boxInfo || !world || !world.units || !world.fast_units || !mapKeys || mapKeys.uid === undefined || !userInst || !userInst.WUF) {
+            espCtx.clearRect(0, 0, espCanvas.width, espCanvas.height);
+            return requestAnimationFrame(renderBoxInfo);
+        }
+
+        let me = world.fast_units[mapKeys.uid];
+        let camX = userInst.WUF.x;
+        let camY = userInst.WUF.y;
+
+        if (!me || typeof camX !== 'number' || typeof camY !== 'number') {
+            espCtx.clearRect(0, 0, espCanvas.width, espCanvas.height);
+            return requestAnimationFrame(renderBoxInfo);
+        }
+
+        espCtx.clearRect(0, 0, espCanvas.width, espCanvas.height);
+        espCtx.font = FONT;
+        espCtx.textAlign = "center";
+        espCtx.lineWidth = 4;
+        espCtx.strokeStyle = "#000000"; 
+        espCtx.fillStyle = "#00FFFF";  
+
+        const screenW = espCanvas.width + 100;
+        const screenH = espCanvas.height + 100;
+        const now = Date.now(); // Время берется один раз на все объекты!
+
+        drawEntities(world, 103, 0, false, "Gift", camX, camY, screenW, screenH, now);       
+        drawEntities(world, 97, 0, false, "Treasure", camX, camY, screenW, screenH, now);    
+        drawEntities(world, 102, 16, true, "Drop", camX, camY, screenW, screenH, now);       
+        drawEntities(world, 98, 240, true, "Dead", camX, camY, screenW, screenH, now);       
+
+        requestAnimationFrame(renderBoxInfo);
+    }
+
+    let checkReady = setInterval(() => {
+        if (document.body) {
+            clearInterval(checkReady);
+            setupEspCanvas();
+        }
+    }, 500);
+})();
+// =====================================================================
+// --- WAYPOINT (WEB WORKER OFFTAB, СЕТКА x100, СУНДУК, ЛОДКА + ARCT API) ---
+// --- ОПТИМИЗИРОВАНО И ИСПРАВЛЕНО ЗАВИСАНИЕ ПРИ ВКЛЮЧЕНИИ ---
+// =====================================================================
+(function() {
+    let lastDirCode = -1;
+    let lastChestDrop = 0;
+    let lastBoatEquip = 0;
+    const RAD_TO_DEG = 180 / Math.PI;
+
+    // --- 1. WEB WORKER ДЛЯ ФОНОВОГО РЕЖИМА (OFFTAB) ---
+    const workerCode = `
+        let timer = null;
+        onmessage = function(e) {
+            if (e.data === 'start') {
+                if (timer) clearInterval(timer);
+                timer = setInterval(() => postMessage('tick'), 50);
+            } else if (e.data === 'stop') {
+                clearInterval(timer);
+                timer = null;
+            }
+        };
+    `;
+    const blob = new Blob([workerCode], { type: 'application/javascript' });
+    const bgWorker = new Worker(URL.createObjectURL(blob));
+    let isWorkerRunning = false;
+
+    bgWorker.onmessage = function(e) {
+        if (e.data === 'tick') waypointEngine(); 
+    };
+
+    setInterval(() => {
+        let conf = typeof _0x73cd4e !== 'undefined' ? _0x73cd4e : window.arctConfig;
+        if (conf && conf.PathFinder) {
+            if (conf.PathFinder.active && !isWorkerRunning) {
+                bgWorker.postMessage('start');
+                isWorkerRunning = true;
+            } else if (!conf.PathFinder.active && isWorkerRunning) {
+                bgWorker.postMessage('stop');
+                isWorkerRunning = false;
+            }
+        }
+    }, 200);
+
+    // --- 2. УПРАВЛЕНИЕ КНОПКАМИ ---
+    window.addEventListener('keydown', (e) => {
+        if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
+        let conf = typeof _0x73cd4e !== 'undefined' ? _0x73cd4e : window.arctConfig;
+        if (!conf || !conf.PathFinder) return;
+
+        if (e.code === conf.PathFinder.bind && conf.PathFinder.bind !== 'NONE' && !e.repeat) {
+            conf.PathFinder.active = !conf.PathFinder.active;
+            if (typeof _0xa896c1 !== 'undefined') _0xa896c1.updateGuiValues();
+            
+            if (!conf.PathFinder.active) {
+                let sock = window.v2600 || window._0x53166f;
+                if (sock && sock.websocket && sock.websocket.readyState === 1) {
+                    let originalSend = sock.websocket._originalSend || sock.websocket.send;
+                    try { originalSend.call(sock.websocket, new Uint8Array([37, 0])); } catch(err){}
+                }
+                lastDirCode = 0;
+            } else {
+                console.log("%c[ARCT Waypoint] Бегу к X: " + conf.PathFinder.End.x + " | Y: " + conf.PathFinder.End.y, "color: cyan;");
+                lastDirCode = -1; // ИСПРАВЛЕНИЕ: Сброс направления при включении с кнопки
+            }
+        }
+
+        if (['KeyW', 'KeyA', 'KeyS', 'KeyD'].includes(e.code) && conf.PathFinder.active) {
+            conf.PathFinder.active = false;
+            if (typeof _0xa896c1 !== 'undefined') _0xa896c1.updateGuiValues();
+            let sock = window.v2600 || window._0x53166f;
+            if (sock && sock.websocket && sock.websocket.readyState === 1) {
+                let originalSend = sock.websocket._originalSend || sock.websocket.send;
+                try { originalSend.call(sock.websocket, new Uint8Array([37, 0])); } catch(err){}
+            }
+            lastDirCode = 0;
+            console.log("%c[ARCT Waypoint] Отменено вручную (WASD)", "color: orange;");
+        }
+    });
+
+    // --- 3. ДВИЖОК БЕГА, СУНДУКА И ЛОДКИ ---
+    function waypointEngine() {
+        let conf = typeof _0x73cd4e !== 'undefined' ? _0x73cd4e : window.arctConfig;
+        if (!conf || !conf.PathFinder || !conf.PathFinder.active) return;
+
+        let world = window.v2603 || window.gameWorld;
+        let mapKeys = window.v2605 || window._0x57f7e4;
+        let sock = window.v2600 || window._0x53166f;
+        let userInst = window.v2604 || window._0x3b2ae4;
+
+        if (!world || !mapKeys || !sock || !sock.websocket || sock.websocket.readyState !== 1) return;
+        let me = world.fast_units[mapKeys.uid];
+        if (!me) return;
+
+        let gridTargetX = conf.PathFinder.End.x;
+        let gridTargetY = conf.PathFinder.End.y;
+        if (gridTargetX === -1 && gridTargetY === -1) return;
+
+        let targetX = gridTargetX * 100;
+        let targetY = gridTargetY * 100;
+
+        let realX = (me.r && me.r.x !== undefined) ? me.r.x : me.x;
+        let realY = (me.r && me.r.y !== undefined) ? me.r.y : me.y;
+
+        let dx = targetX - realX;
+        let dy = targetY - realY;
+        let dist = Math.hypot(dx, dy);
+        let originalSend = sock.websocket._originalSend || sock.websocket.send;
+        let now = Date.now();
+
+        // --- УМНАЯ АВТО-ЛОДКА ---
+        if (now - lastBoatEquip > 2000) { 
+            lastBoatEquip = now;
+            if (userInst && userInst.WUU && userInst.WUU.WUV) {
+                let boat = userInst.WUU.WUV[333];
+                if (boat && (typeof boat === 'number' ? boat : (boat.n ?? boat.count ?? 0)) > 0) {
+                    let isBoatEquipped = (
+                        me.vehicle === 333 || me.vehicule === 333 || me.right === 333 || 
+                        userInst.WUU.vehicle === 333 || userInst.WUU.vehicule === 333 || userInst.WUU.right === 333
+                    );
+                    if (!isBoatEquipped) {
+                        try { originalSend.call(sock.websocket, "[6,333]"); } catch(e){} // Оптимизировано
+                    }
+                }
+            }
+        }
+
+        // --- МУЛЬТИ-СУНДУК ---
+        if (now - lastChestDrop > 35) { 
+            let chests = world.units[11]; 
+            if (chests && chests.length > 0 && userInst && userInst.WUU && userInst.WUU.WUV) {
+                let invObj = userInst.WUU.WUV;
+                let itemsDropped = false;
+                
+                for (let itemId in invObj) {
+                    let itemData = invObj[itemId];
+                    let count = typeof itemData === 'number' ? itemData : (itemData.n ?? itemData.count ?? 0);
+                    let realId = parseInt(itemId);
+                    
+                    if (count > 0 && !isNaN(realId)) {
+                        let dropAmount = Math.min(count, 255); 
+                        for (let c = 0; c < chests.length; c++) {
+                            // Вычисляем дистанцию прямо здесь (ускоряет цикл, не создавая массивы)
+                            let cdx = chests[c].x - realX;
+                            let cdy = chests[c].y - realY;
+                            if (cdx * cdx + cdy * cdy < 90000) { // < 300^2
+                                let cId = chests[c].id; 
+                                let cPid = chests[c].pid ?? chests[c].playerId ?? chests[c][mapKeys?.pid]; 
+
+                                if (cId !== undefined && cPid !== undefined) {
+                                    try { 
+                                        // Оптимизировано без JSON.stringify
+                                        originalSend.call(sock.websocket, "[29," + realId + "," + dropAmount + "," + cPid + "," + cId + "]"); 
+                                        itemsDropped = true;
+                                    } catch(e) {}
+                                }
+                            }
+                        }
+                        if (itemsDropped) {
+                            lastChestDrop = now;
+                            break; 
+                        }
+                    }
+                }
+            }
+        }
+
+        // --- ЛОГИКА ДВИЖЕНИЯ (С ПРИЛИПАНИЕМ УГЛА) ---
+        let dirCode = 0;
+        if (dist > 60) { 
+            let targetAngle = Math.atan2(dy, dx) * RAD_TO_DEG; // Оптимизировано
+            if (targetAngle < 0) targetAngle += 360;
+
+            let idealAngles = { 2: 0, 6: 45, 4: 90, 5: 135, 1: 180, 9: 225, 8: 270, 10: 315 };
+            dirCode = lastDirCode;
+            
+            if (idealAngles[dirCode] !== undefined) {
+                let diff = Math.abs(targetAngle - idealAngles[dirCode]);
+                if (diff > 180) diff = 360 - diff;
+                if (diff > 24) dirCode = 0; 
+            } else {
+                dirCode = 0;
+            }
+
+            if (dirCode === 0) {
+                let sector = Math.round(targetAngle / 45) % 8;
+                const dirMap = [2, 6, 4, 5, 1, 9, 8, 10]; 
+                dirCode = dirMap[sector];
+            }
+        } else {
+            const circlePattern = [8, 10, 2, 6, 4, 5, 1, 9]; 
+            dirCode = circlePattern[((now / 150) | 0) % 8]; // Побитовое округление
+        }
+
+        if (lastDirCode !== dirCode) {
+            try { originalSend.call(sock.websocket, new Uint8Array([37, dirCode])); } catch(e){}
+            lastDirCode = dirCode;
+        }
+
+        let angleRad = Math.atan2(dy, dx);
+        me.angle = angleRad;
+        if (mapKeys.nangle) me[mapKeys.nangle] = angleRad;
+    }
+
+    // --- 4. ОТРИСОВКА ---
+    let checkCtxPathfinder = setInterval(() => {
+        let worldCtx = window.v2601;
+        if (worldCtx && worldCtx.drawGame) {
+            clearInterval(checkCtxPathfinder);
+            let originalDrawGame = worldCtx.drawGame;
+            
+            worldCtx.drawGame = function() {
+                originalDrawGame.apply(this, arguments); 
+                
+                let conf = typeof _0x73cd4e !== 'undefined' ? _0x73cd4e : window.arctConfig;
+                if (!conf || !conf.PathFinder || !conf.PathFinder.active) return;
+
+                let wuf = window.v2604?.WUF; 
+                let ctx = window.v2601?.WTI?.ctx || document.getElementById('game_canvas')?.getContext('2d');
+                let world = window.v2603;
+                let mapKeys = window.v2605;
+
+                if (!ctx || !wuf || !world || !mapKeys) return;
+
+                let me = world.fast_units[mapKeys.uid];
+                if (!me) return;
+
+                let targetX = conf.PathFinder.End.x * 100;
+                let targetY = conf.PathFinder.End.y * 100;
+                if (targetX < 0 || targetY < 0) return;
+
+                let dist = Math.hypot(targetX - me.x, targetY - me.y);
+                let pMeX = me.x + wuf.x;
+                let pMeY = me.y + wuf.y;
+                let pTargetX = targetX + wuf.x;
+                let pTargetY = targetY + wuf.y;
+
+                ctx.save();
+                ctx.beginPath();
+                ctx.lineWidth = 3;
+                ctx.lineCap = "round";
+                ctx.lineJoin = "round";
+                
+                ctx.strokeStyle = dist > 60 ? "rgba(0, 255, 255, 0.75)" : "rgba(0, 255, 0, 0.75)";
+                ctx.shadowColor = dist > 60 ? "rgba(0, 255, 255, 0.35)" : "rgba(0, 255, 0, 0.35)";
+                ctx.shadowBlur = 8;
+                
+                ctx.moveTo(pMeX, pMeY);
+                ctx.lineTo(pTargetX, pTargetY);
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+
+                ctx.beginPath();
+                ctx.arc(pTargetX, pTargetY, 6, 0, Math.PI * 2);
+                ctx.fillStyle = dist > 60 ? "rgba(0, 255, 255, 0.9)" : "rgba(0, 255, 0, 0.9)";
+                ctx.fill();
+
+                ctx.font = "bold 14px 'Baloo Paaji', Arial";
+                ctx.fillStyle = "#FFFFFF";
+                ctx.textAlign = "center";
+                ctx.strokeStyle = "#000000";
+                ctx.lineWidth = 3;
+                
+                let statusText = (dist | 0) + "m"; // Быстрое округление
+                ctx.strokeText(statusText, pTargetX, pTargetY - 15);
+                ctx.fillText(statusText, pTargetX, pTargetY - 15);
+
+                ctx.restore();
+            };
+        }
+    }, 1000);
+
+    // --- 5. ГЛОБАЛЬНАЯ ФУНКЦИЯ ДЛЯ КОНСОЛИ / МАКРОСОВ ---
+    window.arctMoveTo = function(x, y) {
+        let conf = typeof _0x73cd4e !== 'undefined' ? _0x73cd4e : window.arctConfig;
+        if (conf && conf.PathFinder) {
+            conf.PathFinder.End.x = (x / 100) | 0;
+            conf.PathFinder.End.y = (y / 100) | 0;
+            conf.PathFinder.active = true;
+            lastDirCode = -1; // ИСПРАВЛЕНИЕ: Сброс направления при вызове через макрос
+            if (typeof _0xa896c1 !== 'undefined') _0xa896c1.updateGuiValues();
+            console.log("%c[ARCT Waypoint] Проложен маршрут к X: " + conf.PathFinder.End.x + " | Y: " + conf.PathFinder.End.y, "color: lime;");
+        }
+    };
+})();
+// =====================================================================
+// --- SPAM BUILD LOGIC (PACKET 25) OPTIMIZED ---
+// =====================================================================
+(function() {
+    // Выносим константу за пределы цикла
+    const PI2 = Math.PI * 2;
+
+    window.addEventListener('keydown', (e) => {
+        if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
+        let conf = typeof _0x73cd4e !== 'undefined' ? _0x73cd4e : window.arctConfig;
+        if (!conf || !conf.SpamBuild) return;
+
+        if (e.code === conf.SpamBuild.bind && conf.SpamBuild.bind !== 'NONE' && !e.repeat) {
+            conf.SpamBuild.active = !conf.SpamBuild.active;
+            if (typeof _0xa896c1 !== 'undefined') _0xa896c1.updateGuiValues();
+            
+            if (conf.SpamBuild.active) {
+                console.log("%c[ARCT] Spam Build: ON | Пакет: 25 | Предмет: " + window._arctLastBuildItem, "color: lime;");
+            } else {
+                console.log("%c[ARCT] Spam Build: OFF", "color: red;");
+            }
+        }
+    });
+
+    // Интервал 30 мс (быстро, плотно, без киков от античита)
+    setInterval(() => {
+        let conf = typeof _0x73cd4e !== 'undefined' ? _0x73cd4e : window.arctConfig;
+        if (!conf || !conf.SpamBuild || !conf.SpamBuild.active) return;
+
+        let itemId = window._arctLastBuildItem; 
+        // Ранний выход: если предмет не выбран, не грузим игру лишними проверками
+        if (itemId === undefined) return;
+
+        let sock = window.v2600 || window._0x53166f;
+        if (!sock || !sock.websocket || sock.websocket.readyState !== 1) return;
+
+        let world = window.v2603 || window.gameWorld;
+        let mapKeys = window.v2605 || window._0x57f7e4;
+        if (!world || !mapKeys) return;
+
+        let me = world.fast_units[mapKeys.uid];
+        if (me) {
+            // Оптимизация математики: | 0 работает быстрее чем Math.floor
+            let angleVal = ((((me.angle + PI2) % PI2) * 255) / PI2) | 0;
+            
+            // Оптимизация памяти: прямая строка вместо JSON.stringify
+            let packetStr = "[25," + itemId + "," + angleVal + ",0]";
+            
+            let originalSend = sock.websocket._originalSend || sock.websocket.send;
+            try {
+                originalSend.call(sock.websocket, packetStr);
+            } catch (e) {}
+        }
+    }, 30);
+})();
