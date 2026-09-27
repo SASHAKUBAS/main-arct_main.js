@@ -522,6 +522,9 @@ setInterval(() => {
           'active': ![],
           'bind': "Numpad4"
         },
+        'QuestTimer': {
+          'active': 1
+        },
         'AutoSteal': {
           'active': ![],
           'bind': "KeyQ"
@@ -3419,14 +3422,14 @@ setInterval(() => {
                                     if (remainingTimeMs > 20) { 
                                         let screenX = _0x3b2ae4.WUF.x + localPlayer.x;
                                         // Высота таймера (-115 поднимает над ником)
-                                        let screenY = _0x3b2ae4.WUF.y + localPlayer.y - 115; 
+                                        let screenY = _0x3b2ae4.WUF.y + localPlayer.y - 120; 
                                         
                                         _0x507512.save();
                                         _0x507512.lineWidth = 5;
-                                        _0x507512.font = "bold 22px 'Baloo Paaji', sans-serif";
+                                        _0x507512.font = "bold 18px 'Baloo Paaji', sans-serif";
                                         _0x507512.textAlign = "center";
                                         _0x507512.strokeStyle = "#000000";
-                                        _0x507512.fillStyle = "#00ffcc";
+                                        _0x507512.fillStyle = "FFBF63";
                                         
                                         let timeText = (remainingTimeMs / 1000).toFixed(1)+ "";
                                         
@@ -4556,6 +4559,13 @@ if (!_0x73cd4e.Hidden.active && typeof gameWorld !== "undefined") {
               'label': 'Craft Timer',
               'object': _0x73cd4e,
               'property': 'CraftTimer',
+              'onChange': val => { _0xa896c1.saveSettings(); }
+            },
+            {
+              'type': 'checkbox',
+              'label': 'Quest Timer',
+              'object': _0x73cd4e.QuestTimer,
+              'property': 'active',
               'onChange': val => { _0xa896c1.saveSettings(); }
             },
              {
@@ -7917,6 +7927,116 @@ function _0x470946() {
               }
           };
       })();
+// --- ARCT QUEST TIMER С ЗАЩИТОЙ ОТ МЕРЦАНИЯ ---
+if (!window._arctQuestState) window._arctQuestState = { wasActive: false };
+
+// Сохраняем нативные методы браузера, чтобы писать в HTML в обход наших же блокировок
+const nodeTextSetter = Object.getOwnPropertyDescriptor(Node.prototype, 'textContent').set;
+const elemHtmlSetter = Object.getOwnPropertyDescriptor(Element.prototype, 'innerHTML').set;
+
+function hookQuestElement(el) {
+    if (el.dataset.arctHooked) return;
+    el.dataset.arctHooked = "true";
+
+    // Сохраняем изначальное значение до установки хука
+    if (el.textContent.includes("days")) {
+        const match = el.textContent.match(/(\d+)/);
+        if (match) el.dataset.origDays = match[1];
+    }
+
+    // Блокируем игре возможность перезаписывать innerHTML
+    Object.defineProperty(el, 'innerHTML', {
+        set: function(val) {
+            if (val && typeof val === 'string' && val.includes("days")) {
+                const match = val.match(/(\d+)/);
+                if (match) this.dataset.origDays = match[1];
+            }
+            // Если чит выключен — разрешаем игре менять текст
+            if (!_0x73cd4e.QuestTimer.active) {
+                elemHtmlSetter.call(this, val);
+            }
+        },
+        get: function() {
+            return Object.getOwnPropertyDescriptor(Element.prototype, 'innerHTML').get.call(this);
+        }
+    });
+
+    // Блокируем игре возможность перезаписывать textContent
+    Object.defineProperty(el, 'textContent', {
+        set: function(val) {
+            if (val && typeof val === 'string' && val.includes("days")) {
+                const match = val.match(/(\d+)/);
+                if (match) this.dataset.origDays = match[1];
+            }
+            // Если чит выключен — разрешаем игре менять текст
+            if (!_0x73cd4e.QuestTimer.active) {
+                nodeTextSetter.call(this, val);
+            }
+        },
+        get: function() {
+            return Object.getOwnPropertyDescriptor(Node.prototype, 'textContent').get.call(this);
+        }
+    });
+}
+
+function updateQuestTimers() {
+    if (_0x73cd4e.QuestTimer && _0x73cd4e.QuestTimer.active) {
+        window._arctQuestState.wasActive = true;
+        
+        let timePlayedSec = 0;
+        if (_0x73cd4e.timePlayed && _0x73cd4e.timePlayed.start) {
+            timePlayedSec = Math.floor((Date.now() - _0x73cd4e.timePlayed.start) / 1000);
+        }
+        const currentDaySecond = timePlayedSec % 480;
+
+        for (let i = 0; ; i++) {
+            const timeRemainEl = document.getElementById("timeremain_" + i);
+            const timeFinishedEl = document.getElementById("time_finished_" + i);
+            
+            if (!timeRemainEl || !timeFinishedEl) break;
+            
+            // Накидываем невидимый щит на элемент при первой встрече
+            hookQuestElement(timeRemainEl);
+            
+            if (timeRemainEl.style.display === "none" || timeFinishedEl.style.display !== "none") continue;
+            
+            let originalDays = timeRemainEl.dataset.origDays ? parseInt(timeRemainEl.dataset.origDays, 10) : 0;
+
+            let remainingSecs = (originalDays + 1) * 480 - currentDaySecond;
+            if (remainingSecs < 0) remainingSecs = 0;
+            
+            const d = Math.floor(remainingSecs / 480);
+            remainingSecs %= 480;
+            const m = Math.floor(remainingSecs / 60);
+            const s = remainingSecs % 60;
+            
+            let formatted = "";
+            if (d > 0) formatted += d + "d ";
+            formatted += m + ":" + s.toString().padStart(2, "0");
+            
+            // Записываем НАШ красивый таймер в обход блокировки (через нативный сеттер браузера)
+            nodeTextSetter.call(timeRemainEl, formatted);
+        }
+    } else if (window._arctQuestState.wasActive) {
+        // Если выключили функцию в меню — возвращаем всё как было
+        window._arctQuestState.wasActive = false;
+        for (let i = 0; ; i++) {
+            const timeRemainEl = document.getElementById("timeremain_" + i);
+            if (!timeRemainEl) break;
+            
+            let originalDays = timeRemainEl.dataset.origDays || 0;
+            nodeTextSetter.call(timeRemainEl, originalDays + " days");
+        }
+    }
+}
+
+setInterval(() => {
+    try {
+        updateQuestTimers();
+    } catch (e) {}
+}, 1000);
+// ----------------------------------------------------
+// ----------------------------------------------------
       // =====================================================================
 // --- AUTO FOOD & WATER (ОПТИМИЗИРОВАНО + WEB WORKER + RECONNECT SAFE) ---
 // =====================================================================
