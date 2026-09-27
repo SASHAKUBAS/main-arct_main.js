@@ -614,6 +614,9 @@ setInterval(() => {
         'AutoBook': {
           'active': 1
         },
+        'CraftTimer': {
+          'active': 1
+        },
         'ZmaAutoBottle': {
           'enabled': 0,
           'health': 30
@@ -3324,22 +3327,127 @@ setInterval(() => {
               gameWorld.mode === 3 && _0x3d7ea0[_0x29c840.skin] === 28 ? _0xd699be = "#800080" : _0xd699be = 'blue', _0x507512.drawImage(_0x3cca87(1.5, '' + (_0x59bfcc + 1), 15, _0xd699be), 168 + _0x3b2ae4.WUY.translate.x, (_0x3b2ae4.WUY.translate.y - 64 + _0x59bfcc * 22) * 1), !_0x3d7ea0.ldb_label && (_0x3d7ea0.ldb_label = _0x3cca87(1.5, _0x58abce, 15, _0xd699be, undefined, undefined, undefined, undefined, 110)), _0x507512.drawImage(_0x3d7ea0.ldb_label, 187 + _0x3b2ae4.WUY.translate.x, (_0x3b2ae4.WUY.translate.y - 64 + _0x59bfcc * 22) * 1), _0x507512.drawImage(_0x3cca87(1.5, _0xeb3011(_0x2185da), 15, _0xd699be), 304 + _0x3b2ae4.WUY.translate.x, (_0x3b2ae4.WUY.translate.y - 64 + _0x59bfcc * 22) * 1);
             }
           }
-          _0x46233c.WTE = function () {
-            (window.Math.floor.toString() !== 'function\x20floor()\x20{\x20[native\x20code]\x20}' || window.Math.ceil.toString() !== 'function\x20ceil()\x20{\x20[native\x20code]\x20}') && (window.Math.floor = window.Math.floor, window.Math.ceil = window.Math.ceil);
-            if (_0x73cd4e.Hidden.active) {
-              let _0xddbb66 = gameWorld.fast_units[_0x57f7e4.uid],
-                _0x5166ad = gameWorld.WTN[_0x57f7e4.uid / _0x57f7e4.max_units];
-              _0xddbb66 && _0x5166ad && (_0xddbb66[_0x29c840.skin] != _0x3dcaab && (_0xddbb66[_0x29c840.skin] = _0x3dcaab), _0xddbb66[_0x29c840.bag] != _0x114a1d && (_0xddbb66[_0x29c840.bag] = _0x114a1d), _0xddbb66[_0x29c840.acc] != _0x2179a8 && (_0xddbb66[_0x29c840.acc] = _0x2179a8), _0xddbb66[_0x29c840.book] != _0x4f9f49 && (_0xddbb66[_0x29c840.book] = _0x4f9f49), _0x5166ad[_0x29c840.skin] != _0x3dcaab && (_0x5166ad[_0x29c840.skin] = _0x3dcaab), _0x5166ad[_0x29c840.bag] != _0x114a1d && (_0x5166ad[_0x29c840.bag] = _0x114a1d), _0x5166ad[_0x29c840.acc] != _0x2179a8 && (_0x5166ad[_0x29c840.acc] = _0x2179a8), _0x5166ad[_0x29c840.book] != _0x4f9f49 && (_0x5166ad[_0x29c840.book] = _0x4f9f49));
-            } else {
-              let _0x22113c = gameWorld.fast_units[_0x57f7e4.uid],
-                _0x470023 = gameWorld.WTN[_0x57f7e4.uid / _0x57f7e4.max_units];
-              _0x22113c && _0x470023 && _0x4b1f89 && (_0x22113c[_0x29c840.skin] != _0x73cd4e.skinChanger.skin && _0x73cd4e.skinChanger.active && (_0x22113c[_0x29c840.skin] = _0x73cd4e.skinChanger.skin), _0x22113c[_0x29c840.bag] != _0x73cd4e.bagChanger.bag && _0x73cd4e.bagChanger.active && (_0x22113c[_0x29c840.bag] = _0x73cd4e.bagChanger.bag), _0x22113c[_0x29c840.acc] != _0x73cd4e.accChanger.acc && _0x73cd4e.accChanger.active && (_0x22113c[_0x29c840.acc] = _0x73cd4e.accChanger.acc), _0x22113c[_0x29c840.book] != _0x73cd4e.bookChanger.book && _0x73cd4e.bookChanger.active && (_0x22113c[_0x29c840.book] = _0x73cd4e.bookChanger.book), _0x470023[_0x29c840.skin] != _0x73cd4e.skinChanger.skin && _0x73cd4e.skinChanger.active && (_0x470023[_0x29c840.skin] = _0x73cd4e.skinChanger.skin), _0x470023[_0x29c840.bag] != _0x73cd4e.bagChanger.bag && _0x73cd4e.bagChanger.active && (_0x470023[_0x29c840.bag] = _0x73cd4e.bagChanger.bag), _0x470023[_0x29c840.acc] != _0x73cd4e.accChanger.acc && _0x73cd4e.accChanger.active && (_0x470023[_0x29c840.acc] = _0x73cd4e.accChanger.acc), _0x470023[_0x29c840.book] != _0x73cd4e.bookChanger.book && _0x73cd4e.bookChanger.active && (_0x470023[_0x29c840.book] = _0x73cd4e.bookChanger.book));
+         _0x46233c.WTE = function () {
+    (window.Math.floor.toString() !== 'function\x20floor()\x20{\x20[native\x20code]\x20}' || window.Math.ceil.toString() !== 'function\x20ceil()\x20{\x20[native\x20code]\x20}') && (window.Math.floor = window.Math.floor, window.Math.ceil = window.Math.ceil);
+    if (_0x73cd4e.Hidden.active) {
+      let _0xddbb66 = gameWorld.fast_units[_0x57f7e4.uid],
+        _0x5166ad = gameWorld.WTN[_0x57f7e4.uid / _0x57f7e4.max_units];
+      _0xddbb66 && _0x5166ad && (_0xddbb66[_0x29c840.skin] != _0x3dcaab && (_0xddbb66[_0x29c840.skin] = _0x3dcaab), _0xddbb66[_0x29c840.bag] != _0x114a1d && (_0xddbb66[_0x29c840.bag] = _0x114a1d), _0xddbb66[_0x29c840.acc] != _0x2179a8 && (_0xddbb66[_0x29c840.acc] = _0x2179a8), _0xddbb66[_0x29c840.book] != _0x4f9f49 && (_0xddbb66[_0x29c840.book] = _0x4f9f49), _0x5166ad[_0x29c840.skin] != _0x3dcaab && (_0x5166ad[_0x29c840.skin] = _0x3dcaab), _0x5166ad[_0x29c840.bag] != _0x114a1d && (_0x5166ad[_0x29c840.bag] = _0x114a1d), _0x5166ad[_0x29c840.acc] != _0x2179a8 && (_0x5166ad[_0x29c840.acc] = _0x2179a8), _0x5166ad[_0x29c840.book] != _0x4f9f49 && (_0x5166ad[_0x29c840.book] = _0x4f9f49));
+    } else {
+      let _0x22113c = gameWorld.fast_units[_0x57f7e4.uid],
+        _0x470023 = gameWorld.WTN[_0x57f7e4.uid / _0x57f7e4.max_units];
+      _0x22113c && _0x470023 && _0x4b1f89 && (_0x22113c[_0x29c840.skin] != _0x73cd4e.skinChanger.skin && _0x73cd4e.skinChanger.active && (_0x22113c[_0x29c840.skin] = _0x73cd4e.skinChanger.skin), _0x22113c[_0x29c840.bag] != _0x73cd4e.bagChanger.bag && _0x73cd4e.bagChanger.active && (_0x22113c[_0x29c840.bag] = _0x73cd4e.bagChanger.bag), _0x22113c[_0x29c840.acc] != _0x73cd4e.bagChanger.acc && _0x73cd4e.bagChanger.active && (_0x22113c[_0x29c840.acc] = _0x73cd4e.bagChanger.acc), _0x22113c[_0x29c840.book] != _0x73cd4e.bookChanger.book && _0x73cd4e.bookChanger.active && (_0x22113c[_0x29c840.book] = _0x73cd4e.bookChanger.book), _0x470023[_0x29c840.skin] != _0x73cd4e.skinChanger.skin && _0x73cd4e.skinChanger.active && (_0x470023[_0x29c840.skin] = _0x73cd4e.skinChanger.skin), _0x470023[_0x29c840.bag] != _0x73cd4e.bagChanger.bag && _0x73cd4e.bagChanger.active && (_0x470023[_0x29c840.bag] = _0x73cd4e.bagChanger.bag), _0x470023[_0x29c840.acc] != _0x73cd4e.accChanger.acc && _0x73cd4e.accChanger.active && (_0x470023[_0x29c840.acc] = _0x73cd4e.accChanger.acc), _0x470023[_0x29c840.book] != _0x73cd4e.bookChanger.book && _0x73cd4e.bookChanger.active && (_0x470023[_0x29c840.book] = _0x73cd4e.bookChanger.book));
+    }
+    _0x507512.beginPath();
+    let _0x1273aa = _0x3b2ae4.WUY.translate.x;
+    _0x14e8de(_0x507512, _0x73cd4e.showLeaderBoardLevels && !_0x73cd4e.Hidden.active ? _0x1273aa + 132 : _0x1273aa + 152, _0x3b2ae4.WUY.translate.y - 95, _0x73cd4e.showLeaderBoardLevels && !_0x73cd4e.Hidden.active ? 220 : 200, 262, 8), _0x507512.globalAlpha = 0.5, _0x993b50(_0x507512, "#1D6055"), _0x507512.globalAlpha = 1, _0x197751.apply(this, arguments);
+    
+// --- ARCT CRAFT TIMER (Исправленный: защита от залипания и точный поиск) ---
+            if (_0x73cd4e.CraftTimer && !_0x73cd4e.Hidden.active && typeof gameWorld !== "undefined" && _0x3b2ae4.WUF) {
+                let localPlayer = gameWorld.fast_units[_0x57f7e4.uid];
+                
+                if (localPlayer && _0x3b2ae4.WUZ) {
+                    try {
+                        let craftModule = _0x3b2ae4.WUZ;
+                        let progressValue = 0;
+                        
+                        // 1. Строгий поиск прогресса (отсеиваем случайные переменные)
+                        if (typeof craftModule.WUP === 'number' && craftModule.WUP > 0 && craftModule.WUP < 1) {
+                            progressValue = craftModule.WUP;
+                        } else {
+                            let found = false;
+                            for (let key in craftModule) {
+                                let val = craftModule[key];
+                                // Ищем только внутри вложенных объектов (как в оригинале gameClient.craft.timeout.x)
+                                if (typeof val === 'object' && val !== null) {
+                                    for (let subKey in val) {
+                                        if (typeof val[subKey] === 'number' && val[subKey] > 0 && val[subKey] < 1) {
+                                            progressValue = val[subKey]; 
+                                            found = true; break;
+                                        }
+                                    }
+                                }
+                                if (found) break;
+                            }
+                        }
+
+                        if (!window._arctCraftTracker) {
+                            window._arctCraftTracker = { startTime: null, totalTimeMs: 0, lastVal: 0, stuckFrames: 0 };
+                        }
+
+                        let now = Date.now();
+
+                        // 2. Если прогресса нет (сброшен на 0 или достиг 1)
+                        if (progressValue <= 0 || progressValue >= 1) {
+                            window._arctCraftTracker.startTime = null;
+                            window._arctCraftTracker.totalTimeMs = 0;
+                        } else {
+                            // 3. ЗАЩИТА ОТ ЗАЛИПАНИЯ
+                            // Если число не меняется несколько кадров подряд - значит прогресс завис в памяти
+                            if (window._arctCraftTracker.lastVal === progressValue) {
+                                window._arctCraftTracker.stuckFrames++;
+                            } else {
+                                window._arctCraftTracker.stuckFrames = 0;
+                            }
+                            window._arctCraftTracker.lastVal = progressValue;
+
+                            // Если значение замертво висит больше ~250мс (15 кадров) - убиваем таймер
+                            if (window._arctCraftTracker.stuckFrames > 15) {
+                                window._arctCraftTracker.startTime = null;
+                                window._arctCraftTracker.totalTimeMs = 0;
+                            } 
+                            else {
+                                // 4. Основная логика: крафт идет и число меняется
+                                if (window._arctCraftTracker.startTime === null) {
+                                    window._arctCraftTracker.startTime = now;
+                                    window._arctCraftTracker.totalTimeMs = 0;
+                                }
+
+                                // Вычисляем общее время крафта
+                                if (window._arctCraftTracker.totalTimeMs === 0 && progressValue > 0.005) {
+                                    let timePassedMs = now - window._arctCraftTracker.startTime;
+                                    let estimatedTotalMs = timePassedMs / progressValue;
+                                    
+                                    if (estimatedTotalMs > 100 && estimatedTotalMs < 60000) {
+                                        window._arctCraftTracker.totalTimeMs = estimatedTotalMs;
+                                    }
+                                }
+
+                                if (window._arctCraftTracker.totalTimeMs > 0) {
+                                    let remainingTimeMs = window._arctCraftTracker.totalTimeMs * (1 - progressValue);
+                                    
+                                    if (remainingTimeMs > 20) { 
+                                        let screenX = _0x3b2ae4.WUF.x + localPlayer.x;
+                                        // Высота таймера (-115 поднимает над ником)
+                                        let screenY = _0x3b2ae4.WUF.y + localPlayer.y - 115; 
+                                        
+                                        _0x507512.save();
+                                        _0x507512.lineWidth = 5;
+                                        _0x507512.font = "bold 22px 'Baloo Paaji', sans-serif";
+                                        _0x507512.textAlign = "center";
+                                        _0x507512.strokeStyle = "#000000";
+                                        _0x507512.fillStyle = "#00ffcc";
+                                        
+                                        let timeText = (remainingTimeMs / 1000).toFixed(1)+ "";
+                                        
+                                        _0x507512.strokeText(timeText, screenX, screenY);
+                                        _0x507512.fillText(timeText, screenX, screenY);
+                                        _0x507512.restore();
+                                    }
+                                }
+                            }
+                        }
+                    } catch(e) {}
+                } else {
+                    if (window._arctCraftTracker) window._arctCraftTracker.startTime = null;
+                }
             }
-            _0x507512.beginPath();
-            let _0x1273aa = _0x3b2ae4.WUY.translate.x;
-            _0x14e8de(_0x507512, _0x73cd4e.showLeaderBoardLevels && !_0x73cd4e.Hidden.active ? _0x1273aa + 132 : _0x1273aa + 152, _0x3b2ae4.WUY.translate.y - 95, _0x73cd4e.showLeaderBoardLevels && !_0x73cd4e.Hidden.active ? 220 : 200, 262, 8), _0x507512.globalAlpha = 0.5, _0x993b50(_0x507512, "#1D6055"), _0x507512.globalAlpha = 1, _0x197751.apply(this, arguments);
+            // ---------------------------------------------------------------------------------------------
+
+    _0x73cd4e.drawLeaderboardAllies && !_0x73cd4e.Hidden.active && _0x2641ab();
+
             
-_0x73cd4e.drawLeaderboardAllies && !_0x73cd4e.Hidden.active && _0x2641ab();
+            // Далее идет остальной код радары, ESP и т.д.
 
 /// -/// --- ARCT РАДАР РЕНДЕР ---
 if (!_0x73cd4e.Hidden.active && typeof gameWorld !== "undefined") {
@@ -3706,6 +3814,9 @@ if (!_0x73cd4e.Hidden.active && typeof gameWorld !== "undefined") {
           }
           let _0x47b085 = _0x53166f.WTB.bind(_0x36ff7a);
           _0x53166f.WTB = function (_0x5c8b58) {
+            // --- СОХРАНЯЕМ БАЗУ РЕЦЕПТОВ ИЗ 25 ИНДЕКСА ---
+            window.recipesDatabase = _0x5c8b58[25];
+            
             _0x4b1f89 = 0;
             _0x73cd4e.timePlayed.resetClock && (_0x73cd4e.timePlayed.start = Date.now(), _0x73cd4e.timePlayed.resetClock = ![]);
             _0x2dad3 && console.context().log(_0x5c8b58[4]);
@@ -4439,7 +4550,15 @@ if (!_0x73cd4e.Hidden.active && typeof gameWorld !== "undefined") {
               'object': _0x73cd4e,
               'property': "boxInfo",
               'onChange': val => { _0xa896c1.saveSettings(); }
-            }, {
+            },
+            {
+              'type': 'checkbox',
+              'label': 'Craft Timer',
+              'object': _0x73cd4e,
+              'property': 'CraftTimer',
+              'onChange': val => { _0xa896c1.saveSettings(); }
+            },
+             {
               'type': 'checkbox',
               'label': 'Fps',
               'object': _0x73cd4e,
