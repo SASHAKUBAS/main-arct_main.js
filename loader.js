@@ -3805,69 +3805,109 @@ if (!_0x73cd4e.Hidden.active && typeof gameWorld !== "undefined") {
           }, _0x507512.drawImage.toString = function () {
             return "drawImage() { [native code] }";
           };
-          let _0x3ac6a9;
-          _0x507512.drawImage.toString.toString = (_0x3ac6a9 = function () {
-            return "function toString() { [native code] }";
-          }).toString = _0x3ac6a9;
-          async function _0xf08fdb(_0x560cb2, _0x4f984a, _0x195133, _0x34b37d = 10, _0x2b3eab = 100) {
-            while (_0x560cb2[_0x4f984a] === 0 && _0x2b3eab > 0) {
-              _0x2b3eab--, await new Promise(_0x29777d => _0x4cd684.setTimeout(_0x29777d, _0x34b37d));
+         let _0x3ac6a9;
+_0x507512.drawImage.toString.toString = (_0x3ac6a9 = function () {
+    return "function toString() { [native code] }";
+}).toString = _0x3ac6a9;
+
+async function _0xf08fdb(_0x560cb2, _0x4f984a, _0x195133, _0x34b37d = 10, _0x2b3eab = 100) {
+    while (_0x560cb2[_0x4f984a] === 0 && _0x2b3eab > 0) {
+        _0x2b3eab--, await new Promise(_0x29777d => _0x4cd684.setTimeout(_0x29777d, _0x34b37d));
+    }
+    return _0x2dad3 && console.context().log("Updated Data", _0x560cb2, _0x4f984a, _0x560cb2[_0x4f984a]), _0x195133();
+}
+
+let _0x47b085 = _0x53166f.WTB.bind(_0x36ff7a);
+_0x53166f.WTB = function (_0x5c8b58) {
+    // --- 1. СОХРАНЯЕМ БАЗУ РЕЦЕПТОВ (25) И ПРЕПЯТСТВИЯ (23) ---
+    window.recipesDatabase = _0x5c8b58[25];
+    
+    window.staticObstacles = [];
+    if (Array.isArray(_0x5c8b58[23])) {
+        _0x5c8b58[23].forEach(item => {
+            if (Array.isArray(item) && item.length >= 5) {
+                let posX = item[3];
+                let posY = item[4];
+                if (typeof posX === 'number' && typeof posY === 'number') {
+                    window.staticObstacles.push({
+                        x: posX * 100,
+                        y: posY * 100
+                    });
+                }
             }
-            return _0x2dad3 && console.context().log("Updated Data", _0x560cb2, _0x4f984a, _0x560cb2[_0x4f984a]), _0x195133();
-          }
-          let _0x47b085 = _0x53166f.WTB.bind(_0x36ff7a);
-          _0x53166f.WTB = function (_0x5c8b58) {
-            // --- СОХРАНЯЕМ БАЗУ РЕЦЕПТОВ ИЗ 25 ИНДЕКСА ---
-            window.recipesDatabase = _0x5c8b58[25];
-            
-            _0x4b1f89 = 0;
-            _0x73cd4e.timePlayed.resetClock && (_0x73cd4e.timePlayed.start = Date.now(), _0x73cd4e.timePlayed.resetClock = ![]);
-            _0x2dad3 && console.context().log(_0x5c8b58[4]);
-            let _0x36721a = 10,
-              _0x1a2b1f = 11,
-              _0x5890ce = 12,
-              _0x33353c = 13;
-            _0x5c8b58[4].forEach(_0x593367 => {
-              _0x593367.i === _0x5c8b58[9] && (_0x4f9f49 = _0x593367.b, _0x2179a8 = _0x593367.a, _0x114a1d = _0x593367.g, _0x3dcaab = _0x593367.s, _0x593367.b = _0x36721a, _0x593367.a = _0x1a2b1f, _0x593367.g = _0x5890ce, _0x33353c = _0x593367.s === 28 ? 28 : 13, _0x593367.s = _0x33353c);
-            }), _0x1eeacd(), _0x2445ce(), _0x440a80(), _0x54b3b1 = _0x5c8b58[24], _0x5c8b58[24] = '', _0x57f7e4.blizzard = 0, _0x57f7e4.bandage = 0, _0x57f7e4.time = _0x5c8b58[5], _0x57f7e4.max_units = _0x5c8b58[7], _0x57f7e4.uid = _0x5c8b58[9] * _0x57f7e4.max_units;
-            _0x9cb2d9 && (_0x3b2ae4.WUF.WUH = document.documentElement.clientWidth, _0x3b2ae4.WUF.WUI = document.documentElement.clientHeight);
-            _0x1dc604 ? (_0x4cd684.clearInterval(_0x1dc604), _0x1dc604 = 0, _0x1ed932 = 0, _0x1dc604 = _0x4cd684.setInterval(_0x3aae24, 5000)) : _0x1dc604 = _0x4cd684.setInterval(_0x3aae24, 5000);
-            _0x40b9f1 = 0, _0x169d08 = document.defaultView.Date.now(), _0x47b085(_0x5c8b58), _0x517eda.waiting = ![], _0xc6e4ef = {};
-            _0x5c8b58[12] !== 0 && (_0x73cd4e.localToken.TokenID = _0x5c8b58[12].toString());
-            gameWorld.__NW__ = _0x5c8b58[20], gameWorld.__NH__ = _0x5c8b58[21], _0xa896c1.saveSettings(), document.cookie = 'starve_token=' + _0x73cd4e.localToken.Token, document.cookie = "starve_token_id=" + _0x73cd4e.localToken.TokenID, _0x2ceebd();
-            let _0xb0594e = gameWorld.WTN[_0x5c8b58[9]];
-            for (let _0x4e56ca in _0xb0594e) {
-              let _0x3cfa32 = _0xb0594e[_0x4e56ca];
-              if (_0x3cfa32 === _0x33353c) _0x29c840.skin = _0x4e56ca, _0xb0594e[_0x4e56ca] = _0x3dcaab, _0xf08fdb(_0xb0594e, _0x4e56ca, async () => {
+        });
+        console.log("%c[ARCT PathFinder] Загружено препятствий: " + window.staticObstacles.length, "color: lime;");
+    }
+    // --------------------------------------------------------
+
+    _0x4b1f89 = 0;
+    _0x73cd4e.timePlayed.resetClock && (_0x73cd4e.timePlayed.start = Date.now(), _0x73cd4e.timePlayed.resetClock = ![]);
+    _0x2dad3 && console.context().log(_0x5c8b58[4]);
+    
+    let _0x36721a = 10, _0x1a2b1f = 11, _0x5890ce = 12, _0x33353c = 13;
+    
+    _0x5c8b58[4].forEach(_0x593367 => {
+        _0x593367.i === _0x5c8b58[9] && (_0x4f9f49 = _0x593367.b, _0x2179a8 = _0x593367.a, _0x114a1d = _0x593367.g, _0x3dcaab = _0x593367.s, _0x593367.b = _0x36721a, _0x593367.a = _0x1a2b1f, _0x593367.g = _0x5890ce, _0x33353c = _0x593367.s === 28 ? 28 : 13, _0x593367.s = _0x33353c);
+    });
+    
+    _0x1eeacd(); _0x2445ce(); _0x440a80(); 
+    _0x54b3b1 = _0x5c8b58[24]; 
+    _0x5c8b58[24] = ''; 
+    _0x57f7e4.blizzard = 0; 
+    _0x57f7e4.bandage = 0; 
+    _0x57f7e4.time = _0x5c8b58[5]; 
+    _0x57f7e4.max_units = _0x5c8b58[7]; 
+    _0x57f7e4.uid = _0x5c8b58[9] * _0x57f7e4.max_units;
+    
+    _0x9cb2d9 && (_0x3b2ae4.WUF.WUH = document.documentElement.clientWidth, _0x3b2ae4.WUF.WUI = document.documentElement.clientHeight);
+    _0x1dc604 ? (_0x4cd684.clearInterval(_0x1dc604), _0x1dc604 = 0, _0x1ed932 = 0, _0x1dc604 = _0x4cd684.setInterval(_0x3aae24, 5000)) : _0x1dc604 = _0x4cd684.setInterval(_0x3aae24, 5000);
+    _0x40b9f1 = 0; 
+    _0x169d08 = document.defaultView.Date.now(); 
+    _0x47b085(_0x5c8b58); 
+    _0x517eda.waiting = ![]; 
+    _0xc6e4ef = {};
+    _0x5c8b58[12] !== 0 && (_0x73cd4e.localToken.TokenID = _0x5c8b58[12].toString());
+    gameWorld.__NW__ = _0x5c8b58[20]; 
+    gameWorld.__NH__ = _0x5c8b58[21]; 
+    _0xa896c1.saveSettings(); 
+    document.cookie = 'starve_token=' + _0x73cd4e.localToken.Token; 
+    document.cookie = "starve_token_id=" + _0x73cd4e.localToken.TokenID; 
+    _0x2ceebd();
+    
+    let _0xb0594e = gameWorld.WTN[_0x5c8b58[9]];
+    for (let _0x4e56ca in _0xb0594e) {
+        let _0x3cfa32 = _0xb0594e[_0x4e56ca];
+        if (_0x3cfa32 === _0x33353c) {
+            _0x29c840.skin = _0x4e56ca; _0xb0594e[_0x4e56ca] = _0x3dcaab; 
+            _0xf08fdb(_0xb0594e, _0x4e56ca, async () => {
                 let _0x39b43e = gameWorld.fast_units[_0x57f7e4.uid];
-                while (!_0x39b43e) {
-                  _0x39b43e = gameWorld.fast_units[_0x57f7e4.uid], await new Promise(_0x3886ff => _0x4cd684.setTimeout(_0x3886ff, 10));
-                }
-                _0x3dcaab = _0x39b43e[_0x4e56ca], _0x73cd4e.skinChanger.active && (_0xb0594e[_0x4e56ca] = _0x73cd4e.skinChanger.skin, _0x39b43e[_0x4e56ca] = _0x73cd4e.skinChanger.skin);
-              });else {
-                if (_0x3cfa32 === _0x5890ce) _0x29c840.bag = _0x4e56ca, _0xb0594e[_0x4e56ca] = _0x114a1d, _0xf08fdb(_0xb0594e, _0x4e56ca, async () => {
-                  let _0xd6540e = gameWorld.fast_units[_0x57f7e4.uid];
-                  while (!_0xd6540e) {
-                    _0xd6540e = gameWorld.fast_units[_0x57f7e4.uid], await new Promise(_0xfa27fe => _0x4cd684.setTimeout(_0xfa27fe, 10));
-                  }
-                  _0x114a1d = _0xd6540e[_0x4e56ca], _0x73cd4e.bagChanger.active && (_0xb0594e[_0x4e56ca] = _0x73cd4e.bagChanger.bag, _0xd6540e[_0x4e56ca] = _0x73cd4e.bagChanger.bag);
-                });else {
-                  if (_0x3cfa32 === _0x1a2b1f) _0x29c840.acc = _0x4e56ca, _0xb0594e[_0x4e56ca] = _0x2179a8, _0xf08fdb(_0xb0594e, _0x4e56ca, async () => {
-                    let _0x353750 = gameWorld.fast_units[_0x57f7e4.uid];
-                    while (!_0x353750) {
-                      _0x353750 = gameWorld.fast_units[_0x57f7e4.uid], await new Promise(_0x4078d0 => _0x4cd684.setTimeout(_0x4078d0, 10));
-                    }
-                    _0x2179a8 = _0x353750[_0x4e56ca], _0x73cd4e.accChanger.active && (_0xb0594e[_0x4e56ca] = _0x73cd4e.accChanger.acc, _0x353750[_0x4e56ca] = _0x73cd4e.accChanger.acc);
-                  });else _0x3cfa32 === _0x36721a && (_0x29c840.book = _0x4e56ca, _0xb0594e[_0x4e56ca] = _0x4f9f49, _0xf08fdb(_0xb0594e, _0x4e56ca, async () => {
-                    let _0x5bc637 = gameWorld.fast_units[_0x57f7e4.uid];
-                    while (!_0x5bc637) {
-                      _0x5bc637 = gameWorld.fast_units[_0x57f7e4.uid], await new Promise(_0x1302b7 => _0x4cd684.setTimeout(_0x1302b7, 10));
-                    }
-                    _0x4f9f49 = _0x5bc637[_0x4e56ca], _0x73cd4e.bookChanger.active && (_0xb0594e[_0x4e56ca] = _0x73cd4e.bookChanger.book, _0x5bc637[_0x4e56ca] = _0x73cd4e.bookChanger.book);
-                  }));
-                }
-              }
-            }
+                while (!_0x39b43e) { _0x39b43e = gameWorld.fast_units[_0x57f7e4.uid]; await new Promise(_0x3886ff => _0x4cd684.setTimeout(_0x3886ff, 10)); }
+                _0x3dcaab = _0x39b43e[_0x4e56ca]; _0x73cd4e.skinChanger.active && (_0xb0594e[_0x4e56ca] = _0x73cd4e.skinChanger.skin, _0x39b43e[_0x4e56ca] = _0x73cd4e.skinChanger.skin);
+            });
+        } else if (_0x3cfa32 === _0x5890ce) {
+            _0x29c840.bag = _0x4e56ca; _0xb0594e[_0x4e56ca] = _0x114a1d; 
+            _0xf08fdb(_0xb0594e, _0x4e56ca, async () => {
+                let _0xd6540e = gameWorld.fast_units[_0x57f7e4.uid];
+                while (!_0xd6540e) { _0xd6540e = gameWorld.fast_units[_0x57f7e4.uid]; await new Promise(_0xfa27fe => _0x4cd684.setTimeout(_0xfa27fe, 10)); }
+                _0x114a1d = _0xd6540e[_0x4e56ca]; _0x73cd4e.bagChanger.active && (_0xb0594e[_0x4e56ca] = _0x73cd4e.bagChanger.bag, _0xd6540e[_0x4e56ca] = _0x73cd4e.bagChanger.bag);
+            });
+        } else if (_0x3cfa32 === _0x1a2b1f) {
+            _0x29c840.acc = _0x4e56ca; _0xb0594e[_0x4e56ca] = _0x2179a8; 
+            _0xf08fdb(_0xb0594e, _0x4e56ca, async () => {
+                let _0x353750 = gameWorld.fast_units[_0x57f7e4.uid];
+                while (!_0x353750) { _0x353750 = gameWorld.fast_units[_0x57f7e4.uid]; await new Promise(_0x4078d0 => _0x4cd684.setTimeout(_0x4078d0, 10)); }
+                _0x2179a8 = _0x353750[_0x4e56ca]; _0x73cd4e.accChanger.active && (_0xb0594e[_0x4e56ca] = _0x73cd4e.accChanger.acc, _0x353750[_0x4e56ca] = _0x73cd4e.accChanger.acc);
+            });
+        } else if (_0x3cfa32 === _0x36721a) {
+            _0x29c840.book = _0x4e56ca; _0xb0594e[_0x4e56ca] = _0x4f9f49; 
+            _0xf08fdb(_0xb0594e, _0x4e56ca, async () => {
+                let _0x5bc637 = gameWorld.fast_units[_0x57f7e4.uid];
+                while (!_0x5bc637) { _0x5bc637 = gameWorld.fast_units[_0x57f7e4.uid]; await new Promise(_0x1302b7 => _0x4cd684.setTimeout(_0x1302b7, 10)); }
+                _0x4f9f49 = _0x5bc637[_0x4e56ca]; _0x73cd4e.bookChanger.active && (_0xb0594e[_0x4e56ca] = _0x73cd4e.bookChanger.book, _0x5bc637[_0x4e56ca] = _0x73cd4e.bookChanger.book);
+            });
+        }
+    }
+
             _0x4cd684.setTimeout(() => {
               _0x4b1f89 = 1;
             }, 2500);
@@ -11574,8 +11614,7 @@ window.arctMacro = {
     }, 500);
 })();
 // =====================================================================
-// --- WAYPOINT (WEB WORKER OFFTAB, СЕТКА x100, СУНДУК, ЛОДКА + ARCT API) ---
-// --- ОПТИМИЗИРОВАНО И ИСПРАВЛЕНО ЗАВИСАНИЕ ПРИ ВКЛЮЧЕНИИ ---
+// --- ARCT WAYPOINT (RAYCAST ПАТЧФАЙНДЕР, ЛОДКА, СУНДУКИ + ДИНАМИЧЕСКИЙ ОБХОД) ---
 // =====================================================================
 (function() {
     let lastDirCode = -1;
@@ -11583,7 +11622,9 @@ window.arctMacro = {
     let lastBoatEquip = 0;
     const RAD_TO_DEG = 180 / Math.PI;
 
-    // --- 1. WEB WORKER ДЛЯ ФОНОВОГО РЕЖИМА (OFFTAB) ---
+    window.arctRoute = []; // Массив текущих точек обхода
+
+    // --- 1. WEB WORKER ДЛЯ ФОНОВОГО РЕЖИМА ---
     const workerCode = `
         let timer = null;
         onmessage = function(e) {
@@ -11624,10 +11665,16 @@ window.arctMacro = {
         if (!conf || !conf.PathFinder) return;
 
         if (e.code === conf.PathFinder.bind && conf.PathFinder.bind !== 'NONE' && !e.repeat) {
+            if (conf.PathFinder.End.x === -1 || conf.PathFinder.End.y === -1) {
+                console.log("%c[ARCT Waypoint] Ошибка: Точка на мини-карте не выбрана!", "color: red;");
+                return;
+            }
+            
             conf.PathFinder.active = !conf.PathFinder.active;
             if (typeof _0xa896c1 !== 'undefined') _0xa896c1.updateGuiValues();
             
             if (!conf.PathFinder.active) {
+                window.arctRoute = [];
                 let sock = window.v2600 || window._0x53166f;
                 if (sock && sock.websocket && sock.websocket.readyState === 1) {
                     let originalSend = sock.websocket._originalSend || sock.websocket.send;
@@ -11636,12 +11683,13 @@ window.arctMacro = {
                 lastDirCode = 0;
             } else {
                 console.log("%c[ARCT Waypoint] Бегу к X: " + conf.PathFinder.End.x + " | Y: " + conf.PathFinder.End.y, "color: cyan;");
-                lastDirCode = -1; // ИСПРАВЛЕНИЕ: Сброс направления при включении с кнопки
+                lastDirCode = -1;
             }
         }
 
         if (['KeyW', 'KeyA', 'KeyS', 'KeyD'].includes(e.code) && conf.PathFinder.active) {
             conf.PathFinder.active = false;
+            window.arctRoute = []; 
             if (typeof _0xa896c1 !== 'undefined') _0xa896c1.updateGuiValues();
             let sock = window.v2600 || window._0x53166f;
             if (sock && sock.websocket && sock.websocket.readyState === 1) {
@@ -11649,11 +11697,94 @@ window.arctMacro = {
                 try { originalSend.call(sock.websocket, new Uint8Array([37, 0])); } catch(err){}
             }
             lastDirCode = 0;
-            console.log("%c[ARCT Waypoint] Отменено вручную (WASD)", "color: orange;");
+            console.log("%c[ARCT Waypoint] Отменено вручную", "color: orange;");
         }
     });
 
-    // --- 3. ДВИЖОК БЕГА, СУНДУКА И ЛОДКИ ---
+    // --- 3. АЛГОРИТМ RAYCAST (ЛУЧЕВОЙ ОБХОД) ---
+    function getDynamicPath(startX, startY, endX, endY, obstacles) {
+        let path = [];
+        let currX = startX;
+        let currY = startY;
+        let maxSteps = 15; // Защита от бесконечного цикла
+
+        for (let step = 0; step < maxSteps; step++) {
+            let dx = endX - currX;
+            let dy = endY - currY;
+            let dist = Math.hypot(dx, dy);
+
+            if (dist < 20) break; // Достигли цели
+
+            let dirX = dx / dist;
+            let dirY = dy / dist;
+
+            let closestObs = null;
+            let closestProj = Infinity;
+            let clearance = 85; // Насколько близко луч может пройти к центру дерева
+
+            if (obstacles) {
+                for (let i = 0; i < obstacles.length; i++) {
+                    let obs = obstacles[i];
+                    
+                    // Если дерево прям на самой точке финиша, игнорируем его
+                    if (Math.hypot(endX - obs.x, endY - obs.y) < 100) continue;
+
+                    let ox = obs.x - currX;
+                    let oy = obs.y - currY;
+
+                    // Проекция препятствия на луч
+                    let proj = ox * dirX + oy * dirY;
+                    if (proj <= 0 || proj > dist) continue; // Позади нас или за целью
+
+                    // Перпендикулярное расстояние от луча до центра препятствия
+                    let perpDist = Math.abs(ox * dirY - oy * dirX);
+                    
+                    // Если луч пересекает препятствие
+                    if (perpDist < clearance) {
+                        if (proj < closestProj) {
+                            closestProj = proj;
+                            closestObs = obs;
+                        }
+                    }
+                }
+            }
+
+            // Если на пути есть преграда
+            if (closestObs) {
+                let ox = closestObs.x - currX;
+                let oy = closestObs.y - currY;
+                let odist = Math.hypot(ox, oy);
+                let odirX = ox / odist;
+                let odirY = oy / odist;
+
+                // Вычисляем перпендикуляр (влево и вправо от дерева)
+                let pX = -odirY;
+                let pY = odirX;
+
+                let avoidDist = 120; // Дистанция обхода (ставим точку сбоку)
+                let wp1 = { x: closestObs.x + pX * avoidDist, y: closestObs.y + pY * avoidDist };
+                let wp2 = { x: closestObs.x - pX * avoidDist, y: closestObs.y - pY * avoidDist };
+
+                // Выбираем ту сторону, которая ближе к финальной цели
+                let d1 = Math.hypot(endX - wp1.x, endY - wp1.y);
+                let d2 = Math.hypot(endX - wp2.x, endY - wp2.y);
+                let chosenWp = d1 < d2 ? wp1 : wp2;
+
+                path.push(chosenWp);
+                currX = chosenWp.x;
+                currY = chosenWp.y;
+            } else {
+                // Если преград нет - выходим из цикла, путь свободен
+                break;
+            }
+        }
+        
+        // Всегда добавляем финальную точку
+        path.push({x: endX, y: endY});
+        return path;
+    }
+
+    // --- 4. ДВИЖОК БЕГА ---
     function waypointEngine() {
         let conf = typeof _0x73cd4e !== 'undefined' ? _0x73cd4e : window.arctConfig;
         if (!conf || !conf.PathFinder || !conf.PathFinder.active) return;
@@ -11667,83 +11798,70 @@ window.arctMacro = {
         let me = world.fast_units[mapKeys.uid];
         if (!me) return;
 
-        let gridTargetX = conf.PathFinder.End.x;
-        let gridTargetY = conf.PathFinder.End.y;
-        if (gridTargetX === -1 && gridTargetY === -1) return;
-
-        let targetX = gridTargetX * 100;
-        let targetY = gridTargetY * 100;
+        let targetX = conf.PathFinder.End.x * 100;
+        let targetY = conf.PathFinder.End.y * 100;
+        if (targetX < 0 || targetY < 0) return;
 
         let realX = (me.r && me.r.x !== undefined) ? me.r.x : me.x;
         let realY = (me.r && me.r.y !== undefined) ? me.r.y : me.y;
-
-        let dx = targetX - realX;
-        let dy = targetY - realY;
-        let dist = Math.hypot(dx, dy);
         let originalSend = sock.websocket._originalSend || sock.websocket.send;
         let now = Date.now();
 
-        // --- УМНАЯ АВТО-ЛОДКА ---
+        // -- Лодка --
         if (now - lastBoatEquip > 2000) { 
             lastBoatEquip = now;
             if (userInst && userInst.WUU && userInst.WUU.WUV) {
                 let boat = userInst.WUU.WUV[333];
                 if (boat && (typeof boat === 'number' ? boat : (boat.n ?? boat.count ?? 0)) > 0) {
-                    let isBoatEquipped = (
-                        me.vehicle === 333 || me.vehicule === 333 || me.right === 333 || 
-                        userInst.WUU.vehicle === 333 || userInst.WUU.vehicule === 333 || userInst.WUU.right === 333
-                    );
-                    if (!isBoatEquipped) {
-                        try { originalSend.call(sock.websocket, "[6,333]"); } catch(e){} // Оптимизировано
-                    }
+                    let isBoatEquipped = (me.vehicle === 333 || me.vehicule === 333 || me.right === 333 || userInst.WUU.vehicle === 333 || userInst.WUU.vehicule === 333 || userInst.WUU.right === 333);
+                    if (!isBoatEquipped) try { originalSend.call(sock.websocket, "[6,333]"); } catch(e){}
                 }
             }
         }
-
-        // --- МУЛЬТИ-СУНДУК ---
+        
+        // -- Сундуки --
         if (now - lastChestDrop > 35) { 
             let chests = world.units[11]; 
             if (chests && chests.length > 0 && userInst && userInst.WUU && userInst.WUU.WUV) {
                 let invObj = userInst.WUU.WUV;
                 let itemsDropped = false;
-                
                 for (let itemId in invObj) {
-                    let itemData = invObj[itemId];
-                    let count = typeof itemData === 'number' ? itemData : (itemData.n ?? itemData.count ?? 0);
+                    let count = typeof invObj[itemId] === 'number' ? invObj[itemId] : (invObj[itemId].n ?? invObj[itemId].count ?? 0);
                     let realId = parseInt(itemId);
-                    
                     if (count > 0 && !isNaN(realId)) {
-                        let dropAmount = Math.min(count, 255); 
                         for (let c = 0; c < chests.length; c++) {
-                            // Вычисляем дистанцию прямо здесь (ускоряет цикл, не создавая массивы)
-                            let cdx = chests[c].x - realX;
-                            let cdy = chests[c].y - realY;
-                            if (cdx * cdx + cdy * cdy < 90000) { // < 300^2
-                                let cId = chests[c].id; 
-                                let cPid = chests[c].pid ?? chests[c].playerId ?? chests[c][mapKeys?.pid]; 
-
+                            let cdx = chests[c].x - realX, cdy = chests[c].y - realY;
+                            if (cdx * cdx + cdy * cdy < 90000) {
+                                let cId = chests[c].id, cPid = chests[c].pid ?? chests[c].playerId ?? chests[c][mapKeys?.pid]; 
                                 if (cId !== undefined && cPid !== undefined) {
-                                    try { 
-                                        // Оптимизировано без JSON.stringify
-                                        originalSend.call(sock.websocket, "[29," + realId + "," + dropAmount + "," + cPid + "," + cId + "]"); 
-                                        itemsDropped = true;
-                                    } catch(e) {}
+                                    try { originalSend.call(sock.websocket, "[29," + realId + "," + Math.min(count, 255) + "," + cPid + "," + cId + "]"); itemsDropped = true; } catch(e) {}
                                 }
                             }
                         }
-                        if (itemsDropped) {
-                            lastChestDrop = now;
-                            break; 
-                        }
+                        if (itemsDropped) { lastChestDrop = now; break; }
                     }
                 }
             }
         }
 
-        // --- ЛОГИКА ДВИЖЕНИЯ (С ПРИЛИПАНИЕМ УГЛА) ---
+        // --- ДИНАМИЧЕСКИЙ РАСЧЕТ МАРШРУТА ---
+        // Пересчитываем путь каждый тик, чтобы обходить препятствия в реальном времени
+        window.arctRoute = getDynamicPath(realX, realY, targetX, targetY, window.staticObstacles);
+
+        let finalDist = Math.hypot(targetX - realX, targetY - realY);
         let dirCode = 0;
-        if (dist > 60) { 
-            let targetAngle = Math.atan2(dy, dx) * RAD_TO_DEG; // Оптимизировано
+
+        if (finalDist <= 60) {
+            // Если дошли - крутимся
+            const circlePattern = [8, 10, 2, 6, 4, 5, 1, 9]; 
+            dirCode = circlePattern[((now / 150) | 0) % 8];
+        } else if (window.arctRoute.length > 0) {
+            // Идем к ближайшей промежуточной точке
+            let wp = window.arctRoute[0];
+            let dx = wp.x - realX;
+            let dy = wp.y - realY;
+
+            let targetAngle = Math.atan2(dy, dx) * RAD_TO_DEG;
             if (targetAngle < 0) targetAngle += 360;
 
             let idealAngles = { 2: 0, 6: 45, 4: 90, 5: 135, 1: 180, 9: 225, 8: 270, 10: 315 };
@@ -11752,19 +11870,14 @@ window.arctMacro = {
             if (idealAngles[dirCode] !== undefined) {
                 let diff = Math.abs(targetAngle - idealAngles[dirCode]);
                 if (diff > 180) diff = 360 - diff;
-                if (diff > 24) dirCode = 0; 
-            } else {
-                dirCode = 0;
-            }
+                if (diff > 35) dirCode = 0; 
+            } else { dirCode = 0; }
 
             if (dirCode === 0) {
                 let sector = Math.round(targetAngle / 45) % 8;
                 const dirMap = [2, 6, 4, 5, 1, 9, 8, 10]; 
                 dirCode = dirMap[sector];
             }
-        } else {
-            const circlePattern = [8, 10, 2, 6, 4, 5, 1, 9]; 
-            dirCode = circlePattern[((now / 150) | 0) % 8]; // Побитовое округление
         }
 
         if (lastDirCode !== dirCode) {
@@ -11772,12 +11885,12 @@ window.arctMacro = {
             lastDirCode = dirCode;
         }
 
-        let angleRad = Math.atan2(dy, dx);
+        let angleRad = Math.atan2(targetY - realY, targetX - realX);
         me.angle = angleRad;
         if (mapKeys.nangle) me[mapKeys.nangle] = angleRad;
     }
 
-    // --- 4. ОТРИСОВКА ---
+    // --- 5. ОТРИСОВКА МАРШРУТА ---
     let checkCtxPathfinder = setInterval(() => {
         let worldCtx = window.v2601;
         if (worldCtx && worldCtx.drawGame) {
@@ -11804,11 +11917,9 @@ window.arctMacro = {
                 let targetY = conf.PathFinder.End.y * 100;
                 if (targetX < 0 || targetY < 0) return;
 
-                let dist = Math.hypot(targetX - me.x, targetY - me.y);
-                let pMeX = me.x + wuf.x;
-                let pMeY = me.y + wuf.y;
-                let pTargetX = targetX + wuf.x;
-                let pTargetY = targetY + wuf.y;
+                let realX = (me.r && me.r.x !== undefined) ? me.r.x : me.x;
+                let realY = (me.r && me.r.y !== undefined) ? me.r.y : me.y;
+                let dist = Math.hypot(targetX - realX, targetY - realY);
 
                 ctx.save();
                 ctx.beginPath();
@@ -11816,14 +11927,33 @@ window.arctMacro = {
                 ctx.lineCap = "round";
                 ctx.lineJoin = "round";
                 
-                ctx.strokeStyle = dist > 60 ? "rgba(0, 255, 255, 0.75)" : "rgba(0, 255, 0, 0.75)";
-                ctx.shadowColor = dist > 60 ? "rgba(0, 255, 255, 0.35)" : "rgba(0, 255, 0, 0.35)";
+                ctx.strokeStyle = dist > 60 ? "rgba(0, 255, 255, 0.85)" : "rgba(0, 255, 0, 0.85)";
+                ctx.shadowColor = dist > 60 ? "rgba(0, 255, 255, 0.5)" : "rgba(0, 255, 0, 0.5)";
                 ctx.shadowBlur = 8;
                 
-                ctx.moveTo(pMeX, pMeY);
-                ctx.lineTo(pTargetX, pTargetY);
+                // Рисуем ломаную линию через все точки динамического маршрута
+                if (window.arctRoute && window.arctRoute.length > 0) {
+                    ctx.moveTo(realX + wuf.x, realY + wuf.y);
+                    for (let i = 0; i < window.arctRoute.length; i++) {
+                        ctx.lineTo(window.arctRoute[i].x + wuf.x, window.arctRoute[i].y + wuf.y);
+                        
+                        // Рисуем кружок на промежуточных точках обхода
+                        if (i < window.arctRoute.length - 1) {
+                            ctx.fillStyle = "rgba(255, 165, 0, 0.9)"; // Оранжевый для обхода
+                            ctx.fillRect(window.arctRoute[i].x + wuf.x - 3, window.arctRoute[i].y + wuf.y - 3, 6, 6);
+                        }
+                    }
+                } else {
+                    // Страховка (рисуем прямо, если маршрут не сгенерирован)
+                    ctx.moveTo(realX + wuf.x, realY + wuf.y);
+                    ctx.lineTo(targetX + wuf.x, targetY + wuf.y);
+                }
+                
                 ctx.stroke();
                 ctx.shadowBlur = 0;
+
+                let pTargetX = targetX + wuf.x;
+                let pTargetY = targetY + wuf.y;
 
                 ctx.beginPath();
                 ctx.arc(pTargetX, pTargetY, 6, 0, Math.PI * 2);
@@ -11836,23 +11966,21 @@ window.arctMacro = {
                 ctx.strokeStyle = "#000000";
                 ctx.lineWidth = 3;
                 
-                let statusText = (dist | 0) + "m"; // Быстрое округление
+                let statusText = (dist | 0) + "m"; 
                 ctx.strokeText(statusText, pTargetX, pTargetY - 15);
                 ctx.fillText(statusText, pTargetX, pTargetY - 15);
-
                 ctx.restore();
             };
         }
     }, 1000);
 
-    // --- 5. ГЛОБАЛЬНАЯ ФУНКЦИЯ ДЛЯ КОНСОЛИ / МАКРОСОВ ---
     window.arctMoveTo = function(x, y) {
         let conf = typeof _0x73cd4e !== 'undefined' ? _0x73cd4e : window.arctConfig;
         if (conf && conf.PathFinder) {
             conf.PathFinder.End.x = (x / 100) | 0;
             conf.PathFinder.End.y = (y / 100) | 0;
             conf.PathFinder.active = true;
-            lastDirCode = -1; // ИСПРАВЛЕНИЕ: Сброс направления при вызове через макрос
+            lastDirCode = -1;
             if (typeof _0xa896c1 !== 'undefined') _0xa896c1.updateGuiValues();
             console.log("%c[ARCT Waypoint] Проложен маршрут к X: " + conf.PathFinder.End.x + " | Y: " + conf.PathFinder.End.y, "color: lime;");
         }
