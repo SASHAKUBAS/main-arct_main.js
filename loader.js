@@ -649,6 +649,14 @@ setInterval(() => {
         'AutoSeed': {
           'active': 0
         },
+        'market': {
+    'wood': 1,
+    'stone': 1,
+    'gold': 1,
+    'diamond': 1,
+    'amethyst': 1,
+    'reidite': 1
+},
         'AutoFarm': {
           'active': ![],
           'bind': "KeyH",
@@ -5321,7 +5329,7 @@ _0x53166f.WTB = function (_0x5c8b58) {
                 'type': "checkbox",
                 'label': "Auto Mode",
                 'object': _0x73cd4e.AutoBuild,
-                'property': "autoMode", // Новое свойство для переключения умного режима
+                'property': "autoMode",
                 'onChange': _0xnewval => {
                   _0xa896c1.saveSettings();
                 }
@@ -5572,6 +5580,7 @@ _0x53166f.WTB = function (_0x5c8b58) {
                 }
               }]
             }],
+            
           'Macros': [{
                 'type': 'checkbox',
                 'label': 'Enable Path Play',
@@ -5591,6 +5600,193 @@ _0x53166f.WTB = function (_0x5c8b58) {
                 'buttonTextProperty': 'undoBind',
                 'onChange': val => { _0xa896c1.saveSettings(); }
             }],
+
+            'Shop': [{
+              'type': 'subfolder',
+              'label': "Market Trades",
+              'subfolder': [{
+                'type': 'range',
+                'label': "Berries Trades",
+                'min': 0,
+                'max': 9999,
+                'step': 1,
+                'object': _0x73cd4e.market,
+                'property': "wood",
+                'onChange': _0x21b417 => {
+                  _0xa896c1.saveSettings();
+                }
+              }, {
+                'type': 'button',
+                'label': "Convert Berries",
+                'action': _0x263410 => {
+                  let total = _0x73cd4e.market.wood;
+                  let batchSize = 83;
+                  let count = Math.ceil(total / batchSize);
+                  let i = 0;
+                  let spamInterval = setInterval(() => {
+                      if (i >= count || !_0x53166f.websocket || _0x53166f.websocket.readyState !== 1) {
+                          clearInterval(spamInterval);
+                          return;
+                      }
+                      let currentBatch = Math.min(batchSize, total - (i * batchSize));
+                      let originalSend = _0x53166f.websocket._originalSend || _0x53166f.websocket.send;
+                      originalSend.call(_0x53166f.websocket, JSON.stringify([39, currentBatch, 0]));
+                      i++;
+                  }, 50);
+                }
+              }, {
+                'type': "range",
+                'label': "Pumpkin Trades",
+                'min': 0,
+                'max': 9999,
+                'step': 1,
+                'object': _0x73cd4e.market,
+                'property': "stone",
+                'onChange': _0x4f1481 => {
+                  _0xa896c1.saveSettings();
+                }
+              }, {
+                'type': "button",
+                'label': "Convert Pumpkin",
+                'action': _0x30a81b => {
+                  let total = _0x73cd4e.market.stone;
+                  let batchSize = 62;
+                  let count = Math.ceil(total / batchSize);
+                  let i = 0;
+                  let spamInterval = setInterval(() => {
+                      if (i >= count || !_0x53166f.websocket || _0x53166f.websocket.readyState !== 1) {
+                          clearInterval(spamInterval);
+                          return;
+                      }
+                      let currentBatch = Math.min(batchSize, total - (i * batchSize));
+                      let originalSend = _0x53166f.websocket._originalSend || _0x53166f.websocket.send;
+                      originalSend.call(_0x53166f.websocket, JSON.stringify([39, currentBatch, 1]));
+                      i++;
+                  }, 50);
+                }
+              }, {
+                'type': 'range',
+                'label': "Bread Trades",
+                'min': 0,
+                'max': 9999,
+                'step': 1,
+                'object': _0x73cd4e.market,
+                'property': 'gold',
+                'onChange': _0x1d1bd0 => {
+                  _0xa896c1.saveSettings();
+                }
+              }, {
+                'type': "button",
+                'label': "Convert Bread",
+                'action': _0x124b84 => {
+                  let total = _0x73cd4e.market.gold;
+                  let batchSize = 41;
+                  let count = Math.ceil(total / batchSize);
+                  let i = 0;
+                  let spamInterval = setInterval(() => {
+                      if (i >= count || !_0x53166f.websocket || _0x53166f.websocket.readyState !== 1) {
+                          clearInterval(spamInterval);
+                          return;
+                      }
+                      let currentBatch = Math.min(batchSize, total - (i * batchSize));
+                      let originalSend = _0x53166f.websocket._originalSend || _0x53166f.websocket.send;
+                      originalSend.call(_0x53166f.websocket, JSON.stringify([39, currentBatch, 2]));
+                      i++;
+                  }, 50);
+                }
+              }, {
+                'type': "range",
+                'label': "Carrot Trades",
+                'min': 0,
+                'max': 9999,
+                'step': 1,
+                'object': _0x73cd4e.market,
+                'property': "diamond",
+                'onChange': _0x5619b4 => {
+                  _0xa896c1.saveSettings();
+                }
+              }, {
+                'type': 'button',
+                'label': 'Convert Carrot',
+                'action': _0x32da54 => {
+                  let total = _0x73cd4e.market.diamond;
+                  let batchSize = 252;
+                  let count = Math.ceil(total / batchSize);
+                  let i = 0;
+                  let spamInterval = setInterval(() => {
+                      if (i >= count || !_0x53166f.websocket || _0x53166f.websocket.readyState !== 1) {
+                          clearInterval(spamInterval);
+                          return;
+                      }
+                      let currentBatch = Math.min(batchSize, total - (i * batchSize));
+                      let originalSend = _0x53166f.websocket._originalSend || _0x53166f.websocket.send;
+                      originalSend.call(_0x53166f.websocket, JSON.stringify([39, currentBatch, 3]));
+                      i++;
+                  }, 50);
+                }
+              }, {
+                'type': "range",
+                'label': 'Tomato Trades',
+                'min': 0,
+                'max': 9999,
+                'step': 1,
+                'object': _0x73cd4e.market,
+                'property': "amethyst",
+                'onChange': _0x1461c7 => {
+                  _0xa896c1.saveSettings();
+                }
+              }, {
+                'type': 'button',
+                'label': "Convert Tomato",
+                'action': _0x52df01 => {
+                  let total = _0x73cd4e.market.amethyst;
+                  let batchSize = 248;
+                  let count = Math.ceil(total / batchSize);
+                  let i = 0;
+                  let spamInterval = setInterval(() => {
+                      if (i >= count || !_0x53166f.websocket || _0x53166f.websocket.readyState !== 1) {
+                          clearInterval(spamInterval);
+                          return;
+                      }
+                      let currentBatch = Math.min(batchSize, total - (i * batchSize));
+                      let originalSend = _0x53166f.websocket._originalSend || _0x53166f.websocket.send;
+                      originalSend.call(_0x53166f.websocket, JSON.stringify([39, currentBatch, 4]));
+                      i++;
+                  }, 50);
+                }
+              }, {
+                'type': "range",
+                'label': "Thornbush Trades",
+                'min': 0,
+                'max': 9999,
+                'step': 1,
+                'object': _0x73cd4e.market,
+                'property': "reidite",
+                'onChange': _0xdc882e => {
+                  _0xa896c1.saveSettings();
+                }
+              }, {
+                'type': 'button',
+                'label': "Convert Thornbush",
+                'action': _0x1f5a79 => {
+                  let total = _0x73cd4e.market.reidite;
+                  let batchSize = 240;
+                  let count = Math.ceil(total / batchSize);
+                  let i = 0;
+                  let spamInterval = setInterval(() => {
+                      if (i >= count || !_0x53166f.websocket || _0x53166f.websocket.readyState !== 1) {
+                          clearInterval(spamInterval);
+                          return;
+                      }
+                      let currentBatch = Math.min(batchSize, total - (i * batchSize));
+                      let originalSend = _0x53166f.websocket._originalSend || _0x53166f.websocket.send;
+                      originalSend.call(_0x53166f.websocket, JSON.stringify([39, currentBatch, 5]));
+                      i++;
+                  }, 50);
+                }
+              }]
+            }],
+
             'Pathfind': [{
               'type': "checkbox",
               'label': "Enable PathFinder(sf)",
@@ -5619,7 +5815,7 @@ _0x53166f.WTB = function (_0x5c8b58) {
                        _0x73cd4e.PathFinder.End.x = Math.round(_0xme.x / 100);
                       _0x73cd4e.PathFinder.End.y = Math.round(_0xme.y / 100);
                         _0xa896c1.saveSettings();
-                        _0xa896c1.updateGuiValues(); // Мгновенно обновляем цифры в меню
+                        _0xa896c1.updateGuiValues();
                     }
                 }
               }
@@ -5764,7 +5960,7 @@ _0x53166f.WTB = function (_0x5c8b58) {
                 _0xa896c1.saveSettings();
               }
             }, {
-              'type': "text",
+              'type': 'text',
               'label': "Token ID",
               'object': _0x73cd4e.localToken,
               'property': "TokenID",
@@ -5955,7 +6151,7 @@ _0x53166f.WTB = function (_0x5c8b58) {
                 'onChange': _0xbdffbd => {
                   _0xa896c1.saveSettings();
                   let _0x37482d = gameWorld.fast_units[_0x57f7e4.uid],
-                    _0xc10a5a = gameWorld.WTN[_0x57f7e4.uid / _0x57f7e4.max_units];
+                    _0xc10a5a = gameWorld.WTN[_0x37482d / _0x57f7e4.max_units];
                   _0x37482d && _0x29c840.book && _0x73cd4e.bookChanger.active && (_0x37482d[_0x29c840.book] = _0x73cd4e.bookChanger.book, _0xc10a5a[_0x29c840.book] = _0x37482d[_0x29c840.book]);
                 }
               }]
@@ -5973,163 +6169,10 @@ _0x53166f.WTB = function (_0x5c8b58) {
                   }
                 }
               }]
-            }, {
-              'type': 'subfolder',
-              'label': "Market",
-              'subfolder': [{
-                'type': 'range',
-                'label': "Berries Amount",
-                'min': 0,
-                'max': 999,
-                'step': 1,
-                'object': _0x73cd4e.market,
-                'property': "wood",
-                'onChange': _0x21b417 => {
-                  _0xa896c1.saveSettings();
-                }
-              }, {
-                'type': 'button',
-                'label': "Convert Berries",
-                'action': _0x263410 => {
-                  let _0x4bfe4f = 83,
-                    _0x4a63f8 = _0x73cd4e.market.wood,
-                    _0x359d6a = Math.floor(_0x4a63f8 / _0x4bfe4f),
-                    _0x43b67d = _0x4a63f8 - _0x359d6a * _0x4bfe4f;
-                  _0x73cd4e.market.wood = _0x4bfe4f;
-                  for (let _0x2345f9 = 0; _0x2345f9 < _0x359d6a > 0 ? _0x359d6a : 0; _0x2345f9++) {
-                    _0x53166f.websocket && _0x53166f.websocket.readyState === 1 && _0x53166f.WQN(_0x548135("wood", _0x73cd4e.market));
-                  }
-                  _0x73cd4e.market.wood = _0x43b67d < _0x3b2ae4.WUU.WUV[_0x44c140.PLANT] ? _0x43b67d : _0x3b2ae4.WUU.WUV[_0x44c140.PLANT], _0x53166f.websocket && _0x53166f.websocket.readyState === 1 && _0x53166f.WQN(_0x548135("wood", _0x73cd4e.market)), _0x73cd4e.market.wood = _0x4a63f8;
-                }
-              }, {
-                'type': "range",
-                'label': "Pumpkin Amount",
-                'min': 0,
-                'max': 999,
-                'step': 1,
-                'object': _0x73cd4e.market,
-                'property': "stone",
-                'onChange': _0x4f1481 => {
-                  _0xa896c1.saveSettings();
-                }
-              }, {
-                'type': "button",
-                'label': "Convert Pumpkin",
-                'action': _0x30a81b => {
-                  let _0x5b3876 = 62,
-                    _0xd0db6b = _0x73cd4e.market.stone,
-                    _0xbf24c5 = Math.floor(_0xd0db6b / _0x5b3876),
-                    _0x17d2e0 = _0xd0db6b - _0xbf24c5 * _0x5b3876;
-                  _0x73cd4e.market.stone = _0x5b3876;
-                  for (let _0x24767e = 0; _0x24767e < _0xbf24c5 > 0 ? _0xbf24c5 : 0; _0x24767e++) {
-                    _0x53166f.websocket && _0x53166f.websocket.readyState === 1 && _0x53166f.WQN(_0x548135("stone", _0x73cd4e.market));
-                  }
-                  _0x73cd4e.market.stone = _0x17d2e0 < _0x3b2ae4.WUU.WUV[_0x44c140.PLANT] ? _0x17d2e0 : _0x3b2ae4.WUU.WUV[_0x44c140.PLANT], _0x53166f.websocket && _0x53166f.websocket.readyState === 1 && _0x53166f.WQN(_0x548135("stone", _0x73cd4e.market)), _0x73cd4e.market.stone = _0xd0db6b;
-                }
-              }, {
-                'type': 'range',
-                'label': "Bread Amount",
-                'min': 0,
-                'max': 999,
-                'step': 1,
-                'object': _0x73cd4e.market,
-                'property': 'gold',
-                'onChange': _0x1d1bd0 => {
-                  _0xa896c1.saveSettings();
-                }
-              }, {
-                'type': "button",
-                'label': "Convert Bread",
-                'action': _0x124b84 => {
-                  let _0x26f37d = 41,
-                    _0xe48f59 = _0x73cd4e.market.gold,
-                    _0x27236f = Math.floor(_0xe48f59 / _0x26f37d),
-                    _0x383e91 = _0xe48f59 - _0x27236f * _0x26f37d;
-                  _0x73cd4e.market.gold = _0x26f37d;
-                  for (let _0x70d0d4 = 0; _0x70d0d4 < _0x27236f > 0 ? _0x27236f : 0; _0x70d0d4++) {
-                    _0x53166f.websocket && _0x53166f.websocket.readyState === 1 && _0x53166f.WQN(_0x548135("gold", _0x73cd4e.market));
-                  }
-                  _0x73cd4e.market.gold = _0x383e91 < _0x3b2ae4.WUU.WUV[_0x44c140.PLANT] ? _0x383e91 : _0x3b2ae4.WUU.WUV[_0x44c140.PLANT], _0x53166f.websocket && _0x53166f.websocket.readyState === 1 && _0x53166f.WQN(_0x548135("gold", _0x73cd4e.market)), _0x73cd4e.market.gold = _0xe48f59;
-                }
-              }, {
-                'type': "range",
-                'label': "Carrot Amount",
-                'min': 0,
-                'max': 999,
-                'step': 1,
-                'object': _0x73cd4e.market,
-                'property': "diamond",
-                'onChange': _0x5619b4 => {
-                  _0xa896c1.saveSettings();
-                }
-              }, {
-                'type': "button",
-                'label': 'Convert\x20Carrot',
-                'action': _0x32da54 => {
-                  let _0x668013 = 252,
-                    _0x2a6a7a = _0x73cd4e.market.diamond,
-                    _0xd5a182 = Math.floor(_0x2a6a7a / _0x668013),
-                    _0x3858ad = _0x2a6a7a - _0xd5a182 * _0x668013;
-                  _0x73cd4e.market.diamond = _0x668013;
-                  for (let _0x4d3cc4 = 0; _0x4d3cc4 < _0xd5a182 > 0 ? _0xd5a182 : 0; _0x4d3cc4++) {
-                    _0x53166f.websocket && _0x53166f.websocket.readyState === 1 && _0x53166f.WQN(_0x548135("diamond", _0x73cd4e.market));
-                  }
-                  _0x73cd4e.market.diamond = _0x3858ad < _0x3b2ae4.WUU.WUV[_0x44c140.PLANT] ? _0x3858ad : _0x3b2ae4.WUU.WUV[_0x44c140.PLANT], _0x53166f.websocket && _0x53166f.websocket.readyState === 1 && _0x53166f.WQN(_0x548135("diamond", _0x73cd4e.market)), _0x73cd4e.market.diamond = _0x2a6a7a;
-                }
-              }, {
-                'type': "range",
-                'label': 'Tomato\x20Amount',
-                'min': 0,
-                'max': 999,
-                'step': 1,
-                'object': _0x73cd4e.market,
-                'property': "amethyst",
-                'onChange': _0x1461c7 => {
-                  _0xa896c1.saveSettings();
-                }
-              }, {
-                'type': 'button',
-                'label': "Convert Tomato",
-                'action': _0x52df01 => {
-                  let _0x8d4e7f = 248,
-                    _0x20a5ae = _0x73cd4e.market.amethyst,
-                    _0x624370 = Math.floor(_0x20a5ae / _0x8d4e7f),
-                    _0x2f4295 = _0x20a5ae - _0x624370 * _0x8d4e7f;
-                  _0x73cd4e.market.amethyst = _0x8d4e7f;
-                  for (let _0x1fdb54 = 0; _0x1fdb54 < _0x624370 > 0 ? _0x624370 : 0; _0x1fdb54++) {
-                    _0x53166f.websocket && _0x53166f.websocket.readyState === 1 && _0x53166f.WQN(_0x548135("amethyst", _0x73cd4e.market));
-                  }
-                  _0x73cd4e.market.amethyst = _0x2f4295 < _0x3b2ae4.WUU.WUV[_0x44c140.PLANT] ? _0x2f4295 : _0x3b2ae4.WUU.WUV[_0x44c140.PLANT], _0x53166f.websocket && _0x53166f.websocket.readyState === 1 && _0x53166f.WQN(_0x548135("amethyst", _0x73cd4e.market)), _0x73cd4e.market.amethyst = _0x20a5ae;
-                }
-              }, {
-                'type': "range",
-                'label': "Thornbush Amount",
-                'min': 0,
-                'max': 999,
-                'step': 1,
-                'object': _0x73cd4e.market,
-                'property': "reidite",
-                'onChange': _0xdc882e => {
-                  _0xa896c1.saveSettings();
-                }
-              }, {
-                'type': 'button',
-                'label': "Convert Thornbush",
-                'action': _0x1f5a79 => {
-                  let _0x54ee7b = 240,
-                    _0x5808a8 = _0x73cd4e.market.reidite,
-                    _0x305180 = Math.floor(_0x5808a8 / _0x54ee7b),
-                    _0x3e6338 = _0x5808a8 - _0x305180 * _0x54ee7b;
-                  _0x73cd4e.market.reidite = _0x54ee7b;
-                  for (let _0x59ba77 = 0; _0x59ba77 < _0x305180 > 0 ? _0x305180 : 0; _0x59ba77++) {
-                    _0x53166f.websocket && _0x53166f.websocket.readyState === 1 && _0x53166f.WQN(_0x548135("reidite", _0x73cd4e.market));
-                  }
-                  _0x73cd4e.market.reidite = _0x3e6338 < _0x3b2ae4.WUU.WUV[_0x44c140.PLANT] ? _0x3e6338 : _0x3b2ae4.WUU.WUV[_0x44c140.PLANT], _0x53166f.websocket && _0x53166f.websocket.readyState === 1 && _0x53166f.WQN(_0x548135("reidite", _0x73cd4e.market)), _0x73cd4e.market.reidite = _0x5808a8;
-                }
-              }]
-            }]
+           }]
           }
         };
+
         let _0xbf4bc9;
         const _0x2fa324 = localStorage.getItem("guiSettings");
         _0xbf4bc9 = _0x2fa324 ? JSON.parse(_0x2fa324) : null;
